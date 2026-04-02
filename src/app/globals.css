@@ -1,26 +1,175 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  /* — Surface palette (warm neutrals, Parahelp-inspired) — */
+  --color-surface-primary: #fdfcfc;
+  --color-surface-secondary: #f8f7f6;
+  --color-surface-tertiary: #f0efed;
+  --color-surface-inverse: #1c1b18;
+
+  /* — Text palette — */
+  --color-text-primary: #1c1b18;
+  --color-text-secondary: #6b6862;
+  --color-text-tertiary: #a8a5a1;
+  --color-text-inverse: #fdfcfc;
+
+  /* — Border — */
+  --color-border-default: rgba(0, 0, 0, 0.08);
+  --color-border-strong: rgba(0, 0, 0, 0.14);
+
+  /* — Accent — */
+  --color-accent: #f2692f;
+  --color-accent-hover: #d9571f;
+  --color-accent-soft: #fef1eb;
+
+  /* — Integration brand colors — */
+  --color-zendesk: #03363D;
+  --color-zendesk-soft: #E8F5F5;
+  --color-stripe: #635BFF;
+  --color-stripe-soft: #F0EEFF;
+
+  /* — Badge variants — */
+  --color-badge-purple: #7C3AED;
+  --color-badge-purple-soft: #F3EEFF;
+  --color-badge-blue: #3B82F6;
+  --color-badge-blue-soft: #EFF6FF;
+  --color-badge-green: #22C55E;
+  --color-badge-green-soft: #F0FDF4;
+  --color-badge-orange: #F97316;
+  --color-badge-orange-soft: #FFF7ED;
+
+  /* — Diff colors — */
+  --color-diff-added: #DCFCE7;
+  --color-diff-added-text: #166534;
+  --color-diff-removed: #FEE2E2;
+  --color-diff-removed-text: #991B1B;
+
+  /* — Semantic: status — */
+  --color-status-open: #3b82f6;
+  --color-status-open-soft: #eff6ff;
+  --color-status-active: #f2692f;
+  --color-status-active-soft: #fef1eb;
+  --color-status-resolved: #22c55e;
+  --color-status-resolved-soft: #f0fdf4;
+  --color-status-escalated: #ef4444;
+  --color-status-escalated-soft: #fef2f2;
+
+  /* — Semantic: risk — */
+  --color-risk-low: #22c55e;
+  --color-risk-low-soft: #f0fdf4;
+  --color-risk-medium: #eab308;
+  --color-risk-medium-soft: #fefce8;
+  --color-risk-high: #ef4444;
+  --color-risk-high-soft: #fef2f2;
+  --color-risk-critical: #7c2d12;
+  --color-risk-critical-soft: #fef2f2;
+
+  /* — Semantic: confidence — */
+  --color-confidence-high: #22c55e;
+  --color-confidence-high-soft: #f0fdf4;
+  --color-confidence-medium: #eab308;
+  --color-confidence-medium-soft: #fefce8;
+  --color-confidence-low: #ef4444;
+  --color-confidence-low-soft: #fef2f2;
+
+  /* — Radius — */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  /* — Fonts — */
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--color-surface-primary);
+  color: var(--color-text-primary);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Scrollbar refinement */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-pill);
+}
+
+/* Range slider */
+.slider-input {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 100%;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+}
+.slider-input::-webkit-slider-runnable-track {
+  height: 6px;
+  background: transparent;
+  border-radius: var(--radius-pill);
+}
+.slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+  margin-top: -5px;
+}
+.slider-input::-moz-range-track {
+  height: 6px;
+  background: transparent;
+  border-radius: var(--radius-pill);
+  border: none;
+}
+.slider-input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+}
+
+/* Step-in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-step-in {
+  animation: step-in 0.4s ease-out forwards;
 }
