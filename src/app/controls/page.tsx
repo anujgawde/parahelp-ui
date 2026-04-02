@@ -8,11 +8,13 @@ import { defaultControls, computeImpact } from "@/data/controls";
 
 export default function CustomerAgentPage() {
   const [controls, setControls] = useState<AgentControls>(defaultControls);
+  const [saved, setSaved] = useState(false);
+  const [savedControls, setSavedControls] = useState<AgentControls>(defaultControls);
 
   const impact = useMemo(() => computeImpact(controls), [controls]);
-  const baseline = useMemo(() => computeImpact(defaultControls), []);
+  const baseline = useMemo(() => computeImpact(savedControls), [savedControls]);
 
-  const dirty = JSON.stringify(controls) !== JSON.stringify(defaultControls);
+  const dirty = JSON.stringify(controls) !== JSON.stringify(savedControls);
 
   function toggleRule(id: string) {
     setControls((prev) => ({
@@ -188,21 +190,46 @@ export default function CustomerAgentPage() {
 
             {/* Actions */}
             {dirty && (
-              <div className="flex items-center justify-between rounded-lg border border-accent/20 bg-accent-soft px-5 py-3">
+              <div className="flex items-center justify-between rounded-lg border border-accent/20 bg-accent-soft px-5 py-3 animate-fade-in">
                 <p className="text-[13px] text-text-secondary">
                   You have unsaved changes.
                 </p>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setControls(defaultControls)}
+                    onClick={() => setControls(savedControls)}
                     className="rounded-lg border border-border-default bg-surface-primary px-4 py-2 text-[13px] font-medium text-text-secondary transition-colors hover:border-border-strong"
                   >
                     Reset
                   </button>
-                  <button className="rounded-lg bg-surface-inverse px-4 py-2 text-[13px] font-medium text-text-inverse transition-colors hover:bg-surface-inverse/90">
+                  <button
+                    onClick={() => {
+                      setSavedControls(controls);
+                      setSaved(true);
+                      setTimeout(() => setSaved(false), 2500);
+                    }}
+                    className="rounded-lg bg-surface-inverse px-4 py-2 text-[13px] font-medium text-text-inverse transition-colors hover:bg-surface-inverse/90"
+                  >
                     Apply Changes
                   </button>
                 </div>
+              </div>
+            )}
+            {saved && !dirty && (
+              <div className="flex items-center gap-3 rounded-lg border border-badge-green/20 bg-badge-green-soft/30 px-5 py-3 animate-fade-in">
+                <svg
+                  className="h-4 w-4 shrink-0 text-badge-green"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="3.5,8.5 6.5,11.5 12.5,4.5" />
+                </svg>
+                <p className="text-[13px] text-text-secondary">
+                  Changes applied. The agent is now using the updated configuration.
+                </p>
               </div>
             )}
           </div>

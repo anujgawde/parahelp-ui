@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { GuidedDemoBanner } from "@/components/guided/GuidedDemoBanner";
 import {
   AreaChart,
   Area,
@@ -98,6 +99,9 @@ export default function DashboardPage() {
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="space-y-6">
+            {/* Guided demo banner */}
+            <GuidedDemoBanner />
+
             {/* Metric cards */}
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
               <MetricCard
