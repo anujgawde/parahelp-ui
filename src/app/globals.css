@@ -1,50 +1,50 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* — Surface palette (warm neutrals, Parahelp-inspired) — */
+  /*  Surface palette (warm neutrals, Parahelp-inspired)  */
   --color-surface-primary: #fdfcfc;
   --color-surface-secondary: #f8f7f6;
   --color-surface-tertiary: #f0efed;
   --color-surface-inverse: #1c1b18;
 
-  /* — Text palette — */
+  /*  Text palette  */
   --color-text-primary: #1c1b18;
   --color-text-secondary: #6b6862;
   --color-text-tertiary: #a8a5a1;
   --color-text-inverse: #fdfcfc;
 
-  /* — Border — */
+  /*  Border  */
   --color-border-default: rgba(0, 0, 0, 0.08);
   --color-border-strong: rgba(0, 0, 0, 0.14);
 
-  /* — Accent — */
+  /*  Accent  */
   --color-accent: #f2692f;
   --color-accent-hover: #d9571f;
   --color-accent-soft: #fef1eb;
 
-  /* — Integration brand colors — */
-  --color-zendesk: #03363D;
-  --color-zendesk-soft: #E8F5F5;
-  --color-stripe: #635BFF;
-  --color-stripe-soft: #F0EEFF;
+  /*  Integration brand colors  */
+  --color-zendesk: #03363d;
+  --color-zendesk-soft: #e8f5f5;
+  --color-stripe: #635bff;
+  --color-stripe-soft: #f0eeff;
 
-  /* — Badge variants — */
-  --color-badge-purple: #7C3AED;
-  --color-badge-purple-soft: #F3EEFF;
-  --color-badge-blue: #3B82F6;
-  --color-badge-blue-soft: #EFF6FF;
-  --color-badge-green: #22C55E;
-  --color-badge-green-soft: #F0FDF4;
-  --color-badge-orange: #F97316;
-  --color-badge-orange-soft: #FFF7ED;
+  /*  Badge variants  */
+  --color-badge-purple: #7c3aed;
+  --color-badge-purple-soft: #f3eeff;
+  --color-badge-blue: #3b82f6;
+  --color-badge-blue-soft: #eff6ff;
+  --color-badge-green: #22c55e;
+  --color-badge-green-soft: #f0fdf4;
+  --color-badge-orange: #f97316;
+  --color-badge-orange-soft: #fff7ed;
 
-  /* — Diff colors — */
-  --color-diff-added: #DCFCE7;
+  /*  Diff colors  */
+  --color-diff-added: #dcfce7;
   --color-diff-added-text: #166534;
-  --color-diff-removed: #FEE2E2;
-  --color-diff-removed-text: #991B1B;
+  --color-diff-removed: #fee2e2;
+  --color-diff-removed-text: #991b1b;
 
-  /* — Semantic: status — */
+  /*  Semantic: status  */
   --color-status-open: #3b82f6;
   --color-status-open-soft: #eff6ff;
   --color-status-active: #f2692f;
@@ -54,7 +54,7 @@
   --color-status-escalated: #ef4444;
   --color-status-escalated-soft: #fef2f2;
 
-  /* — Semantic: risk — */
+  /*  Semantic: risk  */
   --color-risk-low: #22c55e;
   --color-risk-low-soft: #f0fdf4;
   --color-risk-medium: #eab308;
@@ -64,7 +64,7 @@
   --color-risk-critical: #7c2d12;
   --color-risk-critical-soft: #fef2f2;
 
-  /* — Semantic: confidence — */
+  /*  Semantic: confidence  */
   --color-confidence-high: #22c55e;
   --color-confidence-high-soft: #f0fdf4;
   --color-confidence-medium: #eab308;
@@ -72,13 +72,13 @@
   --color-confidence-low: #ef4444;
   --color-confidence-low-soft: #fef2f2;
 
-  /* — Radius — */
+  /*  Radius  */
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-pill: 999px;
 
-  /* — Fonts — */
+  /*  Fonts  */
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 }

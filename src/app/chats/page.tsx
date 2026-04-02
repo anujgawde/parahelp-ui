@@ -5,14 +5,16 @@ const CHATS = [
   {
     id: "TK-4201",
     title: "Billing cycle inquiry",
-    preview: "When does my current billing cycle end? I want to know before I upgrade...",
+    preview:
+      "When does my current billing cycle end? I want to know before I upgrade...",
     timestamp: "2 min ago",
     status: "resolved" as const,
   },
   {
     id: "TK-4200",
     title: "SSO login failure",
-    preview: "I can't log in with SSO anymore. It was working fine yesterday...",
+    preview:
+      "I can't log in with SSO anymore. It was working fine yesterday...",
     timestamp: "8 min ago",
     status: "escalated" as const,
   },
@@ -39,8 +41,9 @@ const CHATS = [
   },
   {
     id: "TK-4196",
-    title: "Escalation — negative sentiment",
-    preview: "This is absolutely unacceptable. I've been trying to get help for 3 days...",
+    title: "Escalation: Negative sentiment",
+    preview:
+      "This is absolutely unacceptable. I've been trying to get help for 3 days...",
     timestamp: "31 min ago",
     status: "escalated" as const,
   },
@@ -54,7 +57,8 @@ const CHATS = [
   {
     id: "default",
     title: "Billing email change + invoice",
-    preview: "Hi, can you change my billing email to jake@parahelp.com and send me my latest invoice?",
+    preview:
+      "Hi, can you change my billing email to jake@parahelp.com and send me my latest invoice?",
     timestamp: "1 hour ago",
     status: "resolved" as const,
   },
@@ -80,7 +84,8 @@ export default function ChatsPage() {
 
         <div className="flex-1 overflow-y-auto">
           {CHATS.map((chat) => {
-            const statusStyle = STATUS_STYLES[chat.status] ?? STATUS_STYLES.resolved;
+            const statusStyle =
+              STATUS_STYLES[chat.status] ?? STATUS_STYLES.resolved;
             return (
               <Link
                 key={chat.id}
@@ -99,7 +104,9 @@ export default function ChatsPage() {
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="flex items-center gap-1.5">
-                        <span className={`h-1.5 w-1.5 rounded-full ${statusStyle.dot}`} />
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${statusStyle.dot}`}
+                        />
                         <span className="text-[11px] text-text-tertiary">
                           {statusStyle.label}
                         </span>

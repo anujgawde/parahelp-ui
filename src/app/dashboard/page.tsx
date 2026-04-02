@@ -238,8 +238,8 @@ export default function DashboardPage() {
                 <SectionHeader title="Resolution Breakdown" />
                 <Panel className="mt-3 flex-1 flex flex-col justify-center">
                   <div className="flex flex-col items-center">
-                    <div className="relative">
-                      <ResponsiveContainer width={180} height={180}>
+                    <div className="relative overflow-visible">
+                      <ResponsiveContainer width={180} height={180} style={{ overflow: "visible" }}>
                         <PieChart>
                           <Pie
                             data={pieData}
@@ -255,7 +255,10 @@ export default function DashboardPage() {
                               <Cell key={i} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Tooltip contentStyle={CustomTooltipStyle} />
+                          <Tooltip
+                            contentStyle={CustomTooltipStyle}
+                            wrapperStyle={{ zIndex: 100 }}
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                       {/* Center label */}

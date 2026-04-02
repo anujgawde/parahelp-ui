@@ -1,6 +1,6 @@
 interface SectionHeaderProps {
   title: string;
-  /** Optional right-side element — action button, badge count, etc. */
+  /** Optional right-side element: action button, badge count, etc. */
   action?: React.ReactNode;
 }
 

@@ -18,8 +18,9 @@ interface ScheduledChat {
 const SCHEDULED_CHATS: ScheduledChat[] = [
   {
     id: "sc-1",
-    title: "Gap analysis — transferred tickets",
-    prompt: "Analyze all tickets transferred by the AI agent from the past 2 days. Identify gaps in knowledge and procedures, then update configurations.",
+    title: "Gap analysis: Transferred tickets",
+    prompt:
+      "Analyze all tickets transferred by the AI agent from the past 2 days. Identify gaps in knowledge and procedures, then update configurations.",
     schedule: "Every 2 days at 9:00 AM",
     lastRun: "Yesterday at 9:00 AM",
     nextRun: "Tomorrow at 9:00 AM",
@@ -28,7 +29,8 @@ const SCHEDULED_CHATS: ScheduledChat[] = [
   {
     id: "sc-2",
     title: "Bug pattern report",
-    prompt: "Analyze all tickets related to bug reports from the past 3 days and identify patterns — specifically bug reports mentioned in over 3 tickets.",
+    prompt:
+      "Analyze all tickets related to bug reports from the past 3 days and identify patterns (specifically bug reports mentioned in over 3 tickets.)",
     schedule: "Every 3 days at 10:00 AM",
     lastRun: "2 days ago",
     nextRun: "Tomorrow at 10:00 AM",
@@ -37,7 +39,8 @@ const SCHEDULED_CHATS: ScheduledChat[] = [
   {
     id: "sc-3",
     title: "Weekly performance digest",
-    prompt: "Generate a summary of AI agent performance for the past 7 days: resolution rate, avg handle time, top categories, and CSAT trends.",
+    prompt:
+      "Generate a summary of AI agent performance for the past 7 days: resolution rate, avg handle time, top categories, and CSAT trends.",
     schedule: "Every Monday at 8:00 AM",
     lastRun: "Last Monday",
     nextRun: "Next Monday at 8:00 AM",
@@ -46,7 +49,8 @@ const SCHEDULED_CHATS: ScheduledChat[] = [
   {
     id: "sc-4",
     title: "Sentiment alert check",
-    prompt: "Check for any tickets with negative sentiment scores in the past 24 hours that were not escalated. Flag these for review.",
+    prompt:
+      "Check for any tickets with negative sentiment scores in the past 24 hours that were not escalated. Flag these for review.",
     schedule: "Daily at 6:00 PM",
     lastRun: "Today at 6:00 PM",
     nextRun: "Tomorrow at 6:00 PM",
@@ -59,7 +63,7 @@ export default function ScheduledChatsPage() {
 
   function toggleChat(id: string) {
     setChats((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, enabled: !c.enabled } : c))
+      prev.map((c) => (c.id === id ? { ...c, enabled: !c.enabled } : c)),
     );
   }
 

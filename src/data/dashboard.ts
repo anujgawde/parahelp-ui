@@ -6,12 +6,42 @@ export const dashboardMetrics = {
 };
 
 export const issueCategories = [
-  { name: "Billing & Payments", count: 284, percentOfTotal: 27, topRisk: "medium" as const },
-  { name: "Account Access", count: 198, percentOfTotal: 19, topRisk: "high" as const },
-  { name: "Bug Reports", count: 172, percentOfTotal: 16, topRisk: "high" as const },
-  { name: "Subscription Changes", count: 156, percentOfTotal: 15, topRisk: "low" as const },
-  { name: "Feature Requests", count: 134, percentOfTotal: 13, topRisk: "low" as const },
-  { name: "Onboarding Help", count: 104, percentOfTotal: 10, topRisk: "low" as const },
+  {
+    name: "Billing & Payments",
+    count: 284,
+    percentOfTotal: 27,
+    topRisk: "medium" as const,
+  },
+  {
+    name: "Account Access",
+    count: 198,
+    percentOfTotal: 19,
+    topRisk: "high" as const,
+  },
+  {
+    name: "Bug Reports",
+    count: 172,
+    percentOfTotal: 16,
+    topRisk: "high" as const,
+  },
+  {
+    name: "Subscription Changes",
+    count: 156,
+    percentOfTotal: 15,
+    topRisk: "low" as const,
+  },
+  {
+    name: "Feature Requests",
+    count: 134,
+    percentOfTotal: 13,
+    topRisk: "low" as const,
+  },
+  {
+    name: "Onboarding Help",
+    count: 104,
+    percentOfTotal: 10,
+    topRisk: "low" as const,
+  },
 ];
 
 export const agentPerformance = [
@@ -41,16 +71,58 @@ export const resolutionBreakdown = {
 
 // Hourly ticket distribution (24h)
 export const hourlyDistribution = [
-  0, 2, 1, 1, 0, 3, 8, 14, 22, 18, 16, 14,
-  12, 15, 17, 19, 16, 12, 8, 6, 4, 3, 2, 1,
+  0, 2, 1, 1, 0, 3, 8, 14, 22, 18, 16, 14, 12, 15, 17, 19, 16, 12, 8, 6, 4, 3,
+  2, 1,
 ];
 
 export const recentActivity = [
-  { id: "evt-1", ticketId: "TK-4201", description: "Auto-resolved billing inquiry", timestamp: "2 min ago", status: "resolved" as const },
-  { id: "evt-2", ticketId: "TK-4200", description: "Escalated — low confidence on SSO issue", timestamp: "8 min ago", status: "escalated" as const },
-  { id: "evt-3", ticketId: "TK-4199", description: "Refund processed ($42.00)", timestamp: "12 min ago", status: "resolved" as const },
-  { id: "evt-4", ticketId: "TK-4198", description: "Feature request logged — export to CSV", timestamp: "18 min ago", status: "resolved" as const },
-  { id: "evt-5", ticketId: "TK-4197", description: "Password reset completed", timestamp: "24 min ago", status: "resolved" as const },
-  { id: "evt-6", ticketId: "TK-4196", description: "Escalated — customer sentiment negative", timestamp: "31 min ago", status: "escalated" as const },
-  { id: "evt-7", ticketId: "TK-4195", description: "Subscription downgrade processed", timestamp: "45 min ago", status: "resolved" as const },
+  {
+    id: "evt-1",
+    ticketId: "TK-4201",
+    description: "Auto-resolved billing inquiry",
+    timestamp: "2 min ago",
+    status: "resolved" as const,
+  },
+  {
+    id: "evt-2",
+    ticketId: "TK-4200",
+    description: "Escalated: Low confidence on SSO issue",
+    timestamp: "8 min ago",
+    status: "escalated" as const,
+  },
+  {
+    id: "evt-3",
+    ticketId: "TK-4199",
+    description: "Refund processed ($42.00)",
+    timestamp: "12 min ago",
+    status: "resolved" as const,
+  },
+  {
+    id: "evt-4",
+    ticketId: "TK-4198",
+    description: "Feature request logged: Export to CSV",
+    timestamp: "18 min ago",
+    status: "resolved" as const,
+  },
+  {
+    id: "evt-5",
+    ticketId: "TK-4197",
+    description: "Password reset completed",
+    timestamp: "24 min ago",
+    status: "resolved" as const,
+  },
+  {
+    id: "evt-6",
+    ticketId: "TK-4196",
+    description: "Escalated Customer sentiment negative",
+    timestamp: "31 min ago",
+    status: "escalated" as const,
+  },
+  {
+    id: "evt-7",
+    ticketId: "TK-4195",
+    description: "Subscription downgrade processed",
+    timestamp: "45 min ago",
+    status: "resolved" as const,
+  },
 ];

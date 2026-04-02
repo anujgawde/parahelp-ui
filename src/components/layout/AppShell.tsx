@@ -20,7 +20,7 @@ export function AppShell({ children }: AppShellProps) {
         />
       )}
 
-      {/* Sidebar — hidden on mobile, shown on md+ */}
+      {/* Sidebar: Hidden on mobile, shown on md+ */}
       <div
         className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 md:static md:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"

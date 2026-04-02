@@ -10,48 +10,59 @@ export const defaultControls: AgentControls = {
     {
       id: "esc-confidence",
       label: "Low confidence escalation",
-      description: "Escalate to human when AI confidence drops below the auto-resolution threshold",
+      description:
+        "Escalate to human when AI confidence drops below the auto-resolution threshold",
       enabled: true,
     },
     {
       id: "esc-sentiment",
       label: "Negative sentiment detection",
-      description: "Escalate when customer sentiment is classified as angry or frustrated",
+      description:
+        "Escalate when customer sentiment is classified as angry or frustrated",
       enabled: true,
     },
     {
       id: "esc-repeat",
       label: "Repeat contact escalation",
-      description: "Escalate when the same customer contacts support 3+ times in 24 hours",
+      description:
+        "Escalate when the same customer contacts support 3+ times in 24 hours",
       enabled: true,
     },
     {
       id: "esc-refund-high",
       label: "High-value refund review",
-      description: "Require approval pipeline for refunds exceeding the approval threshold",
+      description:
+        "Require approval pipeline for refunds exceeding the approval threshold",
       enabled: true,
     },
     {
       id: "esc-pii",
       label: "PII request hold",
-      description: "Hold and flag tickets where customer requests data export or deletion",
+      description:
+        "Hold and flag tickets where customer requests data export or deletion",
       enabled: false,
     },
     {
       id: "esc-vip",
       label: "VIP account routing",
-      description: "Route enterprise and VIP accounts directly to senior support queue",
+      description:
+        "Route enterprise and VIP accounts directly to senior support queue",
       enabled: false,
     },
   ],
 };
 
 /**
- * Deterministic impact model — approximates how controls affect KPIs.
+ * Deterministic impact model (approximates how controls affect KPIs).
  * In production this would be a backend simulation endpoint.
  */
 export function computeImpact(controls: AgentControls): ImpactPreview {
-  const { autoResolutionThreshold, refundApprovalLimit, aggressiveness, escalationRules } = controls;
+  const {
+    autoResolutionThreshold,
+    refundApprovalLimit,
+    aggressiveness,
+    escalationRules,
+  } = controls;
 
   const enabledRuleCount = escalationRules.filter((r) => r.enabled).length;
 
@@ -72,14 +83,21 @@ export function computeImpact(controls: AgentControls): ImpactPreview {
   const ruleEscPenalty = (enabledRuleCount - 4) * 1.2;
 
   // Refund limit: lower limit = more approvals needed = more escalations
-  const refundEscPenalty = (500 - refundApprovalLimit) / 500 * 3;
+  const refundEscPenalty = ((500 - refundApprovalLimit) / 500) * 3;
 
   const autoResolutionRate = clamp(autoRateFromAggr, 40, 98);
-  const escalationRate = clamp(baseEscRate + ruleEscPenalty + refundEscPenalty - aggrFactor * 8, 1, 35);
+  const escalationRate = clamp(
+    baseEscRate + ruleEscPenalty + refundEscPenalty - aggrFactor * 8,
+    1,
+    35,
+  );
 
   // Resolution time: inversely related to aggressiveness, raised by more rules
   const resTime = clamp(
-    baseResTime - aggrFactor * 2 + ruleEscPenalty * 0.3 + refundEscPenalty * 0.15,
+    baseResTime -
+      aggrFactor * 2 +
+      ruleEscPenalty * 0.3 +
+      refundEscPenalty * 0.15,
     1.2,
     12,
   );
