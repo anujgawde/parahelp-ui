@@ -2,14 +2,21 @@
 
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/layout";
-import { Panel, SectionHeader, Slider, Toggle, InlineLabelValue } from "@/components/ui";
+import {
+  Panel,
+  SectionHeader,
+  Slider,
+  Toggle,
+  InlineLabelValue,
+} from "@/components/ui";
 import type { AgentControls } from "@/data/types";
 import { defaultControls, computeImpact } from "@/data/controls";
 
 export default function CustomerAgentPage() {
   const [controls, setControls] = useState<AgentControls>(defaultControls);
   const [saved, setSaved] = useState(false);
-  const [savedControls, setSavedControls] = useState<AgentControls>(defaultControls);
+  const [savedControls, setSavedControls] =
+    useState<AgentControls>(defaultControls);
 
   const impact = useMemo(() => computeImpact(controls), [controls]);
   const baseline = useMemo(() => computeImpact(savedControls), [savedControls]);
@@ -20,7 +27,7 @@ export default function CustomerAgentPage() {
     setControls((prev) => ({
       ...prev,
       escalationRules: prev.escalationRules.map((r) =>
-        r.id === id ? { ...r, enabled: !r.enabled } : r
+        r.id === id ? { ...r, enabled: !r.enabled } : r,
       ),
     }));
   }
@@ -95,8 +102,8 @@ export default function CustomerAgentPage() {
                   }
                 />
                 <div className="mt-3 flex justify-between text-[11px] text-text-tertiary">
-                  <span>Safest — more escalations, higher accuracy</span>
-                  <span>Fastest — more auto-resolve, higher risk</span>
+                  <span>Safest (more escalations, higher accuracy)</span>
+                  <span>Fastest (more auto-resolve, higher risk)</span>
                 </div>
               </Panel>
             </div>
@@ -107,8 +114,8 @@ export default function CustomerAgentPage() {
                 title="Escalation Rules"
                 action={
                   <span className="text-[11px] text-text-tertiary">
-                    {controls.escalationRules.filter((r) => r.enabled).length} of{" "}
-                    {controls.escalationRules.length} active
+                    {controls.escalationRules.filter((r) => r.enabled).length}{" "}
+                    of {controls.escalationRules.length} active
                   </span>
                 }
               />
@@ -147,7 +154,7 @@ export default function CustomerAgentPage() {
                     <span
                       className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
                         rule.enabled
-                          ? "bg-badge-green-soft text-badge-green"
+                          ? "bg-surface-tertiary text-text-primary"
                           : "bg-surface-tertiary text-text-tertiary"
                       }`}
                     >
@@ -165,25 +172,42 @@ export default function CustomerAgentPage() {
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <p className="text-[12px] text-text-tertiary">Auto-Resolution</p>
+                  <p className="text-[12px] text-text-tertiary">
+                    Auto-Resolution
+                  </p>
                   <p className="text-[18px] font-semibold text-text-primary">
                     {impact.autoResolutionRate}%
                   </p>
-                  <DeltaLabel current={impact.autoResolutionRate} base={baseline.autoResolutionRate} />
+                  <DeltaLabel
+                    current={impact.autoResolutionRate}
+                    base={baseline.autoResolutionRate}
+                  />
                 </div>
                 <div>
-                  <p className="text-[12px] text-text-tertiary">Escalation Rate</p>
+                  <p className="text-[12px] text-text-tertiary">
+                    Escalation Rate
+                  </p>
                   <p className="text-[18px] font-semibold text-text-primary">
                     {impact.escalationRate}%
                   </p>
-                  <DeltaLabel current={impact.escalationRate} base={baseline.escalationRate} invert />
+                  <DeltaLabel
+                    current={impact.escalationRate}
+                    base={baseline.escalationRate}
+                    invert
+                  />
                 </div>
                 <div>
-                  <p className="text-[12px] text-text-tertiary">Avg Resolution</p>
+                  <p className="text-[12px] text-text-tertiary">
+                    Avg Resolution
+                  </p>
                   <p className="text-[18px] font-semibold text-text-primary">
                     {impact.avgResolutionTime}m
                   </p>
-                  <DeltaLabel current={impact.avgResolutionTime} base={baseline.avgResolutionTime} invert />
+                  <DeltaLabel
+                    current={impact.avgResolutionTime}
+                    base={baseline.avgResolutionTime}
+                    invert
+                  />
                 </div>
               </div>
             </Panel>
@@ -228,7 +252,8 @@ export default function CustomerAgentPage() {
                   <polyline points="3.5,8.5 6.5,11.5 12.5,4.5" />
                 </svg>
                 <p className="text-[13px] text-text-secondary">
-                  Changes applied. The agent is now using the updated configuration.
+                  Changes applied. The agent is now using the updated
+                  configuration.
                 </p>
               </div>
             )}

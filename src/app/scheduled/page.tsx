@@ -117,7 +117,7 @@ export default function ScheduledChatsPage() {
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                           chat.enabled
-                            ? "bg-badge-green-soft text-badge-green"
+                            ? "bg-surface-tertiary text-text-primary"
                             : "bg-surface-tertiary text-text-tertiary"
                         }`}
                       >

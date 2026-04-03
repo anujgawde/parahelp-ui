@@ -41,7 +41,7 @@ export const TOUR_STEPS: TourStep[] = [
     target: "tour-stats",
     title: "Key metrics",
     description:
-      "Configs changed, tests passed, deployments, and gaps found — all at a glance.",
+      "Configs changed, tests passed, deployments, and gaps found (all at a glance).",
     buttonHint: "",
     advance: "next",
     page: "/dashboard",
@@ -175,7 +175,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     }
   }, [pathname, currentStep, initialized]);
 
-  const step = active ? TOUR_STEPS[currentStep] ?? null : null;
+  const step = active ? (TOUR_STEPS[currentStep] ?? null) : null;
 
   // Use a ref so setTimeout always calls the latest version
   const currentStepRef = useRef(currentStep);
@@ -251,12 +251,37 @@ function TourOverlay({
 }) {
   const [rect, setRect] = useState<DOMRect | null>(null);
   const rafRef = useRef<number>(0);
+  const scrolledRef = useRef(false);
+
+  // Auto-scroll target into view with room for tooltip below
+  useEffect(() => {
+    scrolledRef.current = false;
+  }, [step.target]);
 
   useEffect(() => {
     function update() {
       const el = document.querySelector(`[data-tour="${step.target}"]`);
       if (el) {
         setRect(el.getBoundingClientRect());
+
+        // Auto-scroll on first detection so element + tooltip are visible
+        if (!scrolledRef.current) {
+          scrolledRef.current = true;
+          const elRect = el.getBoundingClientRect();
+          // Need room for element + tooltip (~220px below element)
+          const neededBottom = elRect.bottom + 220;
+          if (neededBottom > window.innerHeight || elRect.top < 0) {
+            const scrollContainer = el.closest(".overflow-y-auto");
+            if (scrollContainer) {
+              const containerRect = scrollContainer.getBoundingClientRect();
+              const scrollBy = elRect.top - containerRect.top - 80; // 80px from top
+              scrollContainer.scrollBy({
+                top: scrollBy,
+                behavior: "smooth",
+              });
+            }
+          }
+        }
       }
       rafRef.current = requestAnimationFrame(update);
     }
@@ -288,6 +313,17 @@ function TourOverlay({
       <div
         className="fixed inset-0 z-1000"
         onClick={(e) => e.stopPropagation()}
+        onWheel={(e) => {
+          const scrollContainer = document.querySelector(
+            ".overflow-y-auto",
+          ) as HTMLElement | null;
+          if (scrollContainer) {
+            scrollContainer.scrollBy({
+              top: e.deltaY,
+              left: e.deltaX,
+            });
+          }
+        }}
       >
         <svg className="absolute inset-0 w-full h-full">
           <defs>

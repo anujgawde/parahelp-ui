@@ -2,46 +2,45 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import NumberFlow, { continuous } from "@number-flow/react";
 import { AppShell } from "@/components/layout";
 import { ChevronDownIcon, CheckIcon } from "@/components/icons";
 import { useTour } from "@/components/guided/TourProvider";
 
-/* ——— Animated counter ——— */
-function CountUp({
+/* ——— Stat Cell with count-up ——— */
+function StatCell({
   target,
-  suffix = "",
-  delay = 0,
+  suffix,
+  label,
+  delay,
 }: {
   target: number;
-  suffix?: string;
-  delay?: number;
+  suffix: string;
+  label: string;
+  delay: number;
 }) {
-  const [val, setVal] = useState(target);
-  const initialRender = useRef(true);
+  const [value, setValue] = useState(0);
+  const mounted = useRef(false);
+
   useEffect(() => {
-    // Animate on first render, snap on subsequent updates
-    if (initialRender.current) {
-      initialRender.current = false;
-      setVal(0);
-      const t = setTimeout(() => {
-        const start = performance.now();
-        const step = (now: number) => {
-          const p = Math.min((now - start) / 1000, 1);
-          setVal(Math.round((1 - Math.pow(1 - p, 3)) * target));
-          if (p < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      }, delay);
+    if (!mounted.current) {
+      mounted.current = true;
+      const t = setTimeout(() => setValue(target), delay);
       return () => clearTimeout(t);
     } else {
-      setVal(target);
+      setValue(target);
     }
   }, [target, delay]);
+
   return (
-    <>
-      {val}
-      {suffix}
-    </>
+    <div className="rounded-lg bg-surface-secondary py-3 text-center">
+      <div className="text-[20px] font-extrabold tracking-tight text-text-primary tabular-nums">
+        <NumberFlow value={value} suffix={suffix} plugins={[continuous]} />
+      </div>
+      <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
+        {label}
+      </div>
+    </div>
   );
 }
 
@@ -60,7 +59,7 @@ function ProgressRing({ pct, delay = 0 }: { pct: number; delay?: number }) {
         r="12"
         fill="none"
         className="stroke-surface-tertiary"
-        strokeWidth="2"
+        strokeWidth="3"
       />
       <circle
         cx="14"
@@ -68,7 +67,7 @@ function ProgressRing({ pct, delay = 0 }: { pct: number; delay?: number }) {
         r="12"
         fill="none"
         className="stroke-text-primary"
-        strokeWidth="2"
+        strokeWidth="3"
         strokeLinecap="round"
         strokeDasharray="76"
         strokeDashoffset={offset}
@@ -120,7 +119,6 @@ const ACTIONS: ActionItem[] = [
       "Agent proposed a resolution plan for TK-4200 (15 users affected). Requires human review before execution.",
     source: "Ticket escalation · 8 min ago",
     primaryAction: { label: "Review & refine plan", href: "/tickets/TK-4200" },
-    secondaryAction: { label: "View ticket", href: "/tickets/TK-4200" },
   },
   {
     id: "a-3",
@@ -135,7 +133,7 @@ const ACTIONS: ActionItem[] = [
   {
     id: "a-4",
     type: "alert",
-    title: "2 gaps blocked — need new tools",
+    title: "2 gaps blocked: Need new tools",
     detail:
       "Subscription tier lookup (31 tickets) + billing API (14 tickets) can't be resolved with knowledge alone.",
     source: "Gap analysis · Yesterday",
@@ -168,8 +166,8 @@ const TOPICS: TopicItem[] = [
     title: "49/54 tests passed",
     ring: 91,
     items: [
-      "54 sims — new policy tests + baseline regression",
-      "5 failures: credit grant edge case (no balance confirmation)",
+      "54 sims: New policy tests + baseline regression",
+      "5 failures: Credit grant edge case (no balance confirmation)",
     ],
   },
   {
@@ -178,7 +176,7 @@ const TOPICS: TopicItem[] = [
     badge: "2 blocked",
     items: [
       "3 knowledge gaps fixed & published automatically",
-      "2 blocked — need new tools (CRM lookup, billing API)",
+      "2 blocked: Need new tools (CRM lookup, billing API)",
       "1 needs SSO diagnostic integration",
     ],
   },
@@ -187,10 +185,10 @@ const TOPICS: TopicItem[] = [
     title: "4 bug patterns from 101 tickets",
     badge: "Report",
     items: [
-      "Safari checkout timeout — 42 tickets (iOS 17+)",
-      "Dashboard stale data — 28 tickets",
-      "Okta SSO loop — 19 tickets",
-      "CSV export missing fields — 12 tickets (since v3.2)",
+      "Safari checkout timeout: 42 tickets (iOS 17+)",
+      "Dashboard stale data: 28 tickets",
+      "Okta SSO loop: 19 tickets",
+      "CSV export missing fields: 12 tickets (since v3.2)",
     ],
   },
 ];
@@ -298,22 +296,22 @@ function ActionCard({
     if (confirmGone) return null;
     return (
       <div
-        className={`flex items-center gap-3 rounded-lg border border-badge-green/20 bg-badge-green-soft/30 px-5 py-4 animate-fade-in transition-all duration-300 ${
+        className={`flex items-center gap-3 rounded-lg bg-surface-secondary px-5 py-4 animate-fade-in transition-all duration-300 ${
           confirmDismissing ? "opacity-0 translate-x-6 scale-[0.98]" : ""
         }`}
       >
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-badge-green/10">
-          <CheckIcon className="h-3.5 w-3.5 text-badge-green" />
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-tertiary">
+          <CheckIcon className="h-3.5 w-3.5 text-text-primary" />
         </div>
         <div className="flex-1">
           <p className="text-[14px] font-medium text-text-primary">
-            Published to production
+            Pushed to production
           </p>
           <p className="text-[12px] text-text-secondary">{action.title}</p>
         </div>
         <button
           onClick={dismissConfirmation}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-tertiary transition-all hover:bg-badge-green/10 hover:text-text-primary"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-tertiary transition-all hover:bg-surface-tertiary hover:text-text-primary"
           title="Dismiss"
         >
           <svg
@@ -382,7 +380,7 @@ function ActionCard({
   return (
     <div
       data-tour={tourTarget}
-      className={`group rounded-lg border border-border-default bg-surface-primary transition-all hover:border-border-strong hover:shadow-sm ${
+      className={`group rounded-lg bg-surface-secondary transition-all hover:bg-surface-tertiary ${
         state === "exiting"
           ? "opacity-0 translate-x-6 scale-[0.98]"
           : skipAnimation
@@ -394,7 +392,7 @@ function ActionCard({
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
-      <div className="flex items-start gap-3.5 px-5 py-4">
+      <div className="flex items-start gap-3.5 px-5 py-3.5">
         {/* Type indicator */}
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-tertiary mt-0.5">
           <div className={`h-2.5 w-2.5 rounded-full ${typeIndicator}`} />
@@ -405,30 +403,10 @@ function ActionCard({
           <p className="text-[14px] font-semibold text-text-primary leading-snug">
             {action.title}
           </p>
-          <p className="mt-1.5 text-[13px] text-text-secondary leading-relaxed">
+          <p className="mt-1 text-[13px] text-text-secondary leading-relaxed">
             {action.detail}
           </p>
-          <p className="mt-1.5 text-[12px] text-text-tertiary">
-            {action.source}
-          </p>
-
-          {/* Action buttons */}
-          <div className="mt-3 flex gap-2 opacity-0 translate-y-0.5 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0">
-            <button
-              onClick={handlePrimary}
-              className="rounded-md bg-surface-inverse px-3.5 py-1.5 text-[12px] font-medium text-text-inverse transition-colors hover:bg-surface-inverse/90"
-            >
-              {action.primaryAction.label}
-            </button>
-            {action.secondaryAction && !isTourTarget && (
-              <button
-                onClick={handleSecondary}
-                className="rounded-md border border-border-default bg-surface-primary px-3.5 py-1.5 text-[12px] font-medium text-text-secondary transition-colors hover:bg-surface-secondary"
-              >
-                {action.secondaryAction.label}
-              </button>
-            )}
-          </div>
+          <p className="mt-1 text-[12px] text-text-tertiary">{action.source}</p>
         </div>
 
         {/* Dismiss */}
@@ -456,6 +434,28 @@ function ActionCard({
             <line x1="12" y1="4" x2="4" y2="12" />
           </svg>
         </button>
+      </div>
+
+      {/* Action buttons - expand on hover */}
+      <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-200">
+        <div className="overflow-hidden">
+          <div className="flex gap-2 px-5 pb-3 pt-1">
+            <button
+              onClick={handlePrimary}
+              className="rounded-md bg-surface-inverse px-3.5 py-1.5 text-[12px] font-medium text-text-inverse transition-colors hover:bg-surface-inverse/90"
+            >
+              {action.primaryAction.label}
+            </button>
+            {action.secondaryAction && !isTourTarget && (
+              <button
+                onClick={handleSecondary}
+                className="rounded-md border border-border-default bg-surface-primary px-3.5 py-1.5 text-[12px] font-medium text-text-secondary transition-colors hover:bg-surface-secondary"
+              >
+                {action.secondaryAction.label}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Inline test runner */}
@@ -571,7 +571,7 @@ function ActionCard({
               </span>
             </div>
             <p className="text-[11px] text-text-tertiary">
-              31 tickets — agent cannot check Free/Pro/Enterprise status without
+              31 tickets: Agent cannot check Free/Pro/Enterprise status without
               CRM lookup
             </p>
             <div className="flex items-center justify-between mt-1">
@@ -583,8 +583,8 @@ function ActionCard({
               </span>
             </div>
             <p className="text-[11px] text-text-tertiary">
-              14 tickets — requires billing API integration for
-              credit/adjustment actions
+              14 tickets: Requires billing API integration for credit/adjustment
+              actions
             </p>
           </div>
         </div>
@@ -615,9 +615,6 @@ function TopicRow({ topic, index }: { topic: TopicItem; index: number }) {
           open ? "rounded-t-lg bg-surface-secondary" : "rounded-lg"
         }`}
       >
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-surface-tertiary">
-          <div className="h-1.5 w-1.5 rounded-full bg-text-tertiary" />
-        </div>
         <span className="flex-1 text-[13px] font-semibold text-text-primary">
           {topic.title}
         </span>
@@ -663,6 +660,131 @@ function TopicRow({ topic, index }: { topic: TopicItem; index: number }) {
   );
 }
 
+/* ——— Greeting with hover tooltips ——— */
+
+const TASKS_TOOLTIP = [
+  "3 configs deployed this week",
+  "49/54 tests passed",
+  "6 gaps found, 3 auto-fixed",
+];
+
+const UPDATES_TOOLTIP = [
+  "Service issues tool config ready",
+  "SSO login failure needs operator review",
+  "Refund tool timeout needs review",
+  "2 gaps blocked: Need new tools",
+];
+
+function GreetingBlock() {
+  const [hover, setHover] = useState<"tasks" | "updates" | null>(null);
+
+  return (
+    <div className="mb-7 animate-fade-in" data-tour="tour-greeting">
+      <span className="mb-3 inline-block rounded border border-border-default px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">
+        Agent Summary
+      </span>
+      <h2 className="text-[26px] font-bold leading-snug tracking-tight">
+        <span
+          className={`transition-colors duration-200 ${hover ? "text-text-tertiary" : "text-text-primary"}`}
+        >
+          Your agent ran{" "}
+        </span>
+        <span
+          className="relative inline-block cursor-default"
+          onMouseEnter={() => setHover("tasks")}
+          onMouseLeave={() => setHover(null)}
+        >
+          <span
+            className={`border-b-2 transition-colors duration-200 ${
+              hover === "tasks"
+                ? "border-text-primary text-text-primary"
+                : hover
+                  ? "border-text-tertiary text-text-tertiary"
+                  : "border-text-primary text-text-primary"
+            }`}
+          >
+            3 tasks
+          </span>
+          {hover === "tasks" && (
+            <div
+              className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 animate-fade-in"
+              style={{ animationDuration: "0.15s" }}
+            >
+              <div className="w-64 rounded-lg border border-border-default bg-surface-primary shadow-lg shadow-black/8 p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-text-tertiary mb-2">
+                  Tasks completed
+                </p>
+                {TASKS_TOOLTIP.map((t, i) => (
+                  <div key={i} className="flex items-center gap-2 py-1">
+                    <span className=" h-1 w-1 shrink-0 rounded-full bg-text-tertiary" />
+                    <span className="text-[12px] text-text-secondary leading-relaxed">
+                      {t}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </span>
+        <span
+          className={`transition-colors duration-200 ${hover ? "text-text-tertiary" : "text-text-primary"}`}
+        >
+          {" "}
+          and found{" "}
+        </span>
+        <span
+          className="relative inline-block cursor-default"
+          onMouseEnter={() => setHover("updates")}
+          onMouseLeave={() => setHover(null)}
+        >
+          <span
+            className={`border-b-2 transition-colors duration-200 ${
+              hover === "updates"
+                ? "border-text-primary text-text-primary"
+                : hover
+                  ? "border-text-tertiary text-text-tertiary"
+                  : "border-text-primary text-text-primary"
+            }`}
+          >
+            4 updates
+          </span>
+          {hover === "updates" && (
+            <div
+              className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 animate-fade-in"
+              style={{ animationDuration: "0.15s" }}
+            >
+              <div className="w-72 rounded-lg border border-border-default bg-surface-primary shadow-lg shadow-black/8 p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-text-tertiary mb-2">
+                  Updates found
+                </p>
+                {UPDATES_TOOLTIP.map((t, i) => (
+                  <div key={i} className="flex items-center gap-2 py-1">
+                    <span className="h-1 w-1 shrink-0 rounded-full bg-text-tertiary" />
+                    <span className="text-[12px] text-text-secondary leading-relaxed">
+                      {t}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </span>
+        <span
+          className={`transition-colors duration-200 ${hover ? "text-text-tertiary" : "text-text-primary"}`}
+        >
+          .
+        </span>
+      </h2>
+      <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-text-tertiary">
+        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M5.46 4.73A9.96 9.96 0 0 1 12 2c5.52 0 10 4.48 10 10h-2a8 8 0 0 0-13.07-6.19l2.07 2.07H4V2.81l1.46 1.92zM18.54 19.27A9.96 9.96 0 0 1 12 22C6.48 22 2 17.52 2 12h2a8 8 0 0 0 13.07 6.19l-2.07-2.07H20v5.07l-1.46-1.92z" />
+        </svg>
+        8 min ago
+      </div>
+    </div>
+  );
+}
+
 /* ——— Page ——— */
 
 // Persist which action cards have been acted on
@@ -695,7 +817,7 @@ export default function DashboardPage() {
   const publishCount = Object.values(dismissed).filter(
     (v) => v === "published",
   ).length;
-  const activeActions = ACTIONS.filter((a) => !dismissed[a.id]);
+  const activeActions = ACTIONS.filter((a) => dismissed[a.id] !== "dismissed");
   const visible = showAll ? activeActions : activeActions.slice(0, 3);
   const activeCount = activeActions.length;
   const hasMore = !showAll && activeActions.length > 3;
@@ -722,9 +844,9 @@ export default function DashboardPage() {
           <div className="mx-auto max-w-3xl px-4 py-6 md:px-6 md:py-10">
             {/* Tour complete banner */}
             {tourCompleteMsg && (
-              <div className="mb-6 flex items-center gap-3 rounded-xl border border-badge-green/20 bg-badge-green-soft/20 px-5 py-4 animate-fade-in">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-badge-green/10">
-                  <CheckIcon className="h-4 w-4 text-badge-green" />
+              <div className="mb-6 flex items-center gap-3 rounded-xl bg-surface-secondary px-5 py-4 animate-fade-in">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-tertiary">
+                  <CheckIcon className="h-4 w-4 text-text-primary" />
                 </div>
                 <div className="flex-1">
                   <p className="text-[14px] font-semibold text-text-primary">
@@ -732,7 +854,7 @@ export default function DashboardPage() {
                   </p>
                   <p className="text-[12px] text-text-secondary mt-0.5">
                     You experienced how an operator can steer an agent&apos;s
-                    plan — editing steps, simulating outcomes, and choosing what
+                    plan: Editing steps, simulating outcomes, and choosing what
                     gets executed.
                   </p>
                 </div>
@@ -756,30 +878,7 @@ export default function DashboardPage() {
             )}
 
             {/* Greeting */}
-            <div className="mb-7 animate-fade-in" data-tour="tour-greeting">
-              <span className="mb-3 inline-block rounded border border-border-default px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">
-                Agent Summary
-              </span>
-              <h2 className="text-[26px] font-bold leading-snug tracking-tight text-text-primary">
-                Your agent ran{" "}
-                <span className="border-b-2 border-text-primary">3 tasks</span>{" "}
-                and found{" "}
-                <span className="border-b-2 border-text-primary">
-                  4 updates
-                </span>
-                .
-              </h2>
-              <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-text-tertiary">
-                <svg
-                  className="h-3 w-3"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M5.46 4.73A9.96 9.96 0 0 1 12 2c5.52 0 10 4.48 10 10h-2a8 8 0 0 0-13.07-6.19l2.07 2.07H4V2.81l1.46 1.92zM18.54 19.27A9.96 9.96 0 0 1 12 22C6.48 22 2 17.52 2 12h2a8 8 0 0 0 13.07 6.19l-2.07-2.07H20v5.07l-1.46-1.92z" />
-                </svg>
-                8 min ago
-              </div>
-            </div>
+            <GreetingBlock />
 
             {/* Stats strip */}
             <div
@@ -788,21 +887,13 @@ export default function DashboardPage() {
               style={{ animationDelay: "80ms" }}
             >
               {STATS.map((s, i) => (
-                <div
+                <StatCell
                   key={i}
-                  className="rounded-lg bg-surface-secondary py-3 text-center"
-                >
-                  <div className="text-[20px] font-extrabold tracking-tight text-text-primary tabular-nums">
-                    <CountUp
-                      target={s.target + (i === 2 ? publishCount : 0)}
-                      suffix={s.suffix ?? ""}
-                      delay={s.delay}
-                    />
-                  </div>
-                  <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
-                    {s.label}
-                  </div>
-                </div>
+                  target={s.target + (i === 2 ? publishCount : 0)}
+                  suffix={s.suffix ?? ""}
+                  label={s.label}
+                  delay={s.delay}
+                />
               ))}
             </div>
 
