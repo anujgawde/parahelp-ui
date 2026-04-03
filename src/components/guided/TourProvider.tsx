@@ -41,7 +41,7 @@ export const TOUR_STEPS: TourStep[] = [
     target: "tour-stats",
     title: "Key metrics",
     description:
-      "Configs changed, tests passed, deployments, and gaps found (all at a glance).",
+      "Configs changed, tests passed, deployments, and gaps found; all at a glance.",
     buttonHint: "",
     advance: "next",
     page: "/dashboard",

@@ -23,15 +23,13 @@ export function TestCaseCard({ testCase }: TestCaseCardProps) {
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-secondary/50"
       >
-        <div
-          className={`flex h-5 w-5 items-center justify-center rounded-full shrink-0 ${
-            testCase.passed ? "bg-badge-green-soft" : "bg-risk-high-soft"
-          }`}
-        >
+        <div className="flex h-5 w-5 items-center justify-center shrink-0">
           {testCase.passed ? (
-            <CheckIcon className="h-3 w-3 text-badge-green" />
+            <CheckIcon className="h-5 w-5 text-badge-green" />
           ) : (
-            <span className="text-[10px] font-bold text-risk-high">X</span>
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-risk-high-soft">
+              <span className="text-[10px] font-bold text-risk-high">X</span>
+            </div>
           )}
         </div>
         <span className="flex-1 text-[14px] font-medium text-text-primary">

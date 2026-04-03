@@ -42,15 +42,9 @@ export const GUIDED_STEPS: GuidedStep[] = [
   },
   {
     id: "plan",
-    title: "Agent proposes resolution plan",
-    description:
-      "Based on retrieved context, the agent generates a step-by-step plan.",
-  },
-  {
-    id: "refine",
     title: "Refine the plan",
     description:
-      "Edit steps, reorder actions, toggle items on/off, and manage context sources.",
+      "Edit, reorder, or toggle steps and context sources in your agent's plan.",
   },
   {
     id: "simulate",
@@ -214,15 +208,19 @@ export function computeSimulation(
   const origIncluded = originalSources.filter((s) => s.included).length;
   const modIncluded = modifiedSources.filter((s) => s.included).length;
   const newSources = modifiedSources.filter(
-    (s) => s.included && !originalSources.find((o) => o.id === s.id && o.included),
+    (s) =>
+      s.included && !originalSources.find((o) => o.id === s.id && o.included),
   );
   const removedSources = originalSources.filter(
-    (s) => s.included && !modifiedSources.find((m) => m.id === s.id && m.included),
+    (s) =>
+      s.included && !modifiedSources.find((m) => m.id === s.id && m.included),
   );
 
   if (newSources.length > 0) {
     boost += newSources.length * 4;
-    reasons.push(`Included ${newSources.length} additional knowledge source${newSources.length > 1 ? "s" : ""}`);
+    reasons.push(
+      `Included ${newSources.length} additional knowledge source${newSources.length > 1 ? "s" : ""}`,
+    );
   }
   if (removedSources.length > 0) {
     boost += removedSources.length * 2;
@@ -247,8 +245,16 @@ export function computeSimulation(
 
   const modified: SimulationResult = {
     confidence: originalResult.confidence + cappedBoost,
-    risk: cappedBoost >= 12 ? "Low" : cappedBoost >= 5 ? "Medium" : originalResult.risk,
-    success: Math.min(originalResult.success + Math.round(cappedBoost * 1.2), 98),
+    risk:
+      cappedBoost >= 12
+        ? "Low"
+        : cappedBoost >= 5
+          ? "Medium"
+          : originalResult.risk,
+    success: Math.min(
+      originalResult.success + Math.round(cappedBoost * 1.2),
+      98,
+    ),
     reasons,
   };
 

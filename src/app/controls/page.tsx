@@ -242,14 +242,10 @@ export default function CustomerAgentPage() {
               <div className="flex items-center gap-3 rounded-lg border border-badge-green/20 bg-badge-green-soft/30 px-5 py-3 animate-fade-in">
                 <svg
                   className="h-4 w-4 shrink-0 text-badge-green"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
                 >
-                  <polyline points="3.5,8.5 6.5,11.5 12.5,4.5" />
+                  <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-.997-6l7.07-7.071-1.414-1.414-5.656 5.657-2.829-2.829-1.414 1.414L11.003 16z" />
                 </svg>
                 <p className="text-[13px] text-text-secondary">
                   Changes applied. The agent is now using the updated

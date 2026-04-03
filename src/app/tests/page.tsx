@@ -4,18 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout";
 import { MemoryFileCard } from "@/components/testing/MemoryFileCard";
-import { ChevronDownIcon } from "@/components/icons";
+import { ChevronDownIcon, CheckIcon as CheckCircleIcon } from "@/components/icons";
 import { memoryFiles, testCases } from "@/data/agent-testing";
 import type { TestCase } from "@/data/types";
-
-/* Remix checkbox-circle-fill icon */
-function CheckCircleIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-.997-6l7.07-7.071-1.414-1.414-5.656 5.657-2.829-2.829-1.414 1.414L11.003 16z" />
-    </svg>
-  );
-}
 
 /* Spinner icon */
 function SpinnerIcon({ className }: { className?: string }) {

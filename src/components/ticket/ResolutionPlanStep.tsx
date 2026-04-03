@@ -1,14 +1,5 @@
 import type { ResolutionPlanStep as PlanStepType } from "../../data/types";
-import { LinkIcon, StripeIcon, ZendeskIcon, ApprovalIcon } from "../icons";
-
-/* Remix checkbox-circle-fill icon */
-function CheckCircleIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-.997-6l7.07-7.071-1.414-1.414-5.656 5.657-2.829-2.829-1.414 1.414L11.003 16z" />
-    </svg>
-  );
-}
+import { LinkIcon, StripeIcon, ZendeskIcon, ApprovalIcon, CheckIcon } from "../icons";
 
 interface ResolutionPlanStepProps {
   step: PlanStepType;
@@ -31,7 +22,7 @@ function StepIcon({ icon }: { icon: PlanStepType["icon"] }) {
 function StatusIndicator({ status }: { status: PlanStepType["status"] }) {
   switch (status) {
     case "complete":
-      return <CheckCircleIcon className="h-5 w-5 text-badge-green" />;
+      return <CheckIcon className="h-5 w-5 text-badge-green" />;
     case "loading":
       return (
         <div className="h-4 w-4 animate-spin rounded-full border-2 border-surface-tertiary border-t-text-tertiary" />

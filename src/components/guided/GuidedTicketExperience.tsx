@@ -86,9 +86,9 @@ export function GuidedTicketExperience() {
     [plan, sources, originalPlan, originalSources],
   );
 
-  // Auto-run simulation when reaching step 4
+  // Auto-run simulation when reaching step 3
   useEffect(() => {
-    if (currentStep === 4 && !simulationRun) {
+    if (currentStep === 3 && !simulationRun) {
       setSimulationRun(true);
     }
   }, [currentStep, simulationRun]);
@@ -159,10 +159,10 @@ export function GuidedTicketExperience() {
 
   // Scroll to relevant section on step change
   useEffect(() => {
-    const refs = [issueRef, contextRef, planRef, planRef, simRef, decisionRef];
+    const refs = [issueRef, contextRef, planRef, simRef, decisionRef];
     const ref = refs[currentStep];
     // Delay for elements that animate in
-    const delay = currentStep >= 4 ? 400 : 100;
+    const delay = currentStep >= 3 ? 400 : 100;
     const t = setTimeout(() => {
       if (ref?.current) {
         ref.current.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -194,7 +194,7 @@ export function GuidedTicketExperience() {
   const handleReturn = useCallback(() => {
     setSimulationRun(false);
     setSelection(null);
-    setCurrentStep(3);
+    setCurrentStep(2);
   }, []);
 
   function handleSelect(sel: "original" | "modified" | null) {
@@ -204,7 +204,7 @@ export function GuidedTicketExperience() {
   function handleExecute() {
     if (!selection) return;
     setExecuting(true);
-    setCurrentStep(5);
+    setCurrentStep(4);
     setTimeout(() => {
       setExecuting(false);
       setExecuted(true);
@@ -212,7 +212,7 @@ export function GuidedTicketExperience() {
   }
 
   const handleNext = useCallback(() => {
-    if (currentStep === 5 && selection && !executing && !executed) {
+    if (currentStep === 4 && selection && !executing && !executed) {
       handleExecute();
       return;
     }
@@ -221,7 +221,7 @@ export function GuidedTicketExperience() {
 
   // Auto-select default when reaching the execute step
   useEffect(() => {
-    if (currentStep === 5 && !selection) {
+    if (currentStep === 4 && !selection) {
       setSelection(hasModifications ? "modified" : "original");
     }
   }, [currentStep, selection, hasModifications]);
@@ -229,9 +229,9 @@ export function GuidedTicketExperience() {
   // State indicators for progressive reveal
   const showContext = currentStep >= 1;
   const showPlan = currentStep >= 2;
-  const planEditable = currentStep >= 3;
-  const showSimulation = currentStep >= 4;
-  const showDecision = currentStep >= 5;
+  const planEditable = currentStep >= 2;
+  const showSimulation = currentStep >= 3;
+  const showDecision = currentStep >= 4;
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden">
@@ -310,7 +310,7 @@ export function GuidedTicketExperience() {
                         sources={sources}
                         onChange={setSources}
                         editable={planEditable}
-                        highlighted={currentStep === 1 || currentStep === 3}
+                        highlighted={currentStep === 1 || currentStep === 2}
                       />
                     </div>
                   )}
@@ -322,7 +322,7 @@ export function GuidedTicketExperience() {
                         steps={plan}
                         onChange={setPlan}
                         editable={planEditable}
-                        highlighted={currentStep === 2 || currentStep === 3}
+                        highlighted={currentStep === 2}
                       />
                     </div>
                   )}
@@ -333,7 +333,7 @@ export function GuidedTicketExperience() {
                       <button
                         onClick={() => {
                           setSimulationRun(true);
-                          setCurrentStep(4);
+                          setCurrentStep(3);
                         }}
                         className="flex items-center gap-2 rounded-lg bg-surface-inverse px-5 py-2.5 text-[13px] font-medium text-text-inverse transition-all hover:bg-surface-inverse/90 hover:shadow-lg"
                       >
@@ -359,7 +359,7 @@ export function GuidedTicketExperience() {
                       <SimulationPanel
                         original={simulation.original}
                         modified={simulation.modified}
-                        highlighted={currentStep === 4}
+                        highlighted={currentStep === 3}
                       />
                     </div>
                   )}
@@ -369,7 +369,7 @@ export function GuidedTicketExperience() {
                     <div ref={decisionRef} className="animate-guide-section">
                       <ExecutionDecisionBar
                         hasModifications={hasModifications}
-                        highlighted={currentStep === 5}
+                        highlighted={currentStep === 4}
                         selection={selection}
                         onSelect={handleSelect}
                         onExecute={handleExecute}
@@ -434,7 +434,7 @@ export function GuidedTicketExperience() {
         showDashboardButton={workflowComplete}
         onGoToDashboard={handleGoToDashboard}
         executeReady={
-          currentStep === 5 && !!selection && !executing && !executed
+          currentStep === 4 && !!selection && !executing && !executed
         }
         onExecute={handleExecute}
         executing={executing}
@@ -449,7 +449,6 @@ function StateIndicator({ step }: { step: number }) {
   const states = [
     { label: "Investigating", color: "bg-badge-blue" },
     { label: "Retrieving", color: "bg-badge-blue" },
-    { label: "Proposing", color: "bg-badge-orange" },
     { label: "Awaiting refinement", color: "bg-accent" },
     { label: "Simulating", color: "bg-badge-purple" },
     { label: "Ready to execute", color: "bg-badge-green" },

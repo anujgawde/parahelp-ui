@@ -300,9 +300,7 @@ function ActionCard({
           confirmDismissing ? "opacity-0 translate-x-6 scale-[0.98]" : ""
         }`}
       >
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-tertiary">
-          <CheckIcon className="h-3.5 w-3.5 text-text-primary" />
-        </div>
+        <CheckIcon className="h-7 w-7 shrink-0 text-badge-green" />
         <div className="flex-1">
           <p className="text-[14px] font-medium text-text-primary">
             Pushed to production
@@ -339,9 +337,7 @@ function ActionCard({
           confirmDismissing ? "opacity-0 translate-x-6 scale-[0.98]" : ""
         }`}
       >
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-tertiary">
-          <CheckIcon className="h-3.5 w-3.5 text-text-tertiary" />
-        </div>
+        <CheckIcon className="h-7 w-7 shrink-0 text-text-primary" />
         <div className="flex-1">
           <p className="text-[14px] font-medium text-text-secondary">
             Acknowledged
@@ -845,9 +841,7 @@ export default function DashboardPage() {
             {/* Tour complete banner */}
             {tourCompleteMsg && (
               <div className="mb-6 flex items-center gap-3 rounded-xl bg-surface-secondary px-5 py-4 animate-fade-in">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-tertiary">
-                  <CheckIcon className="h-4 w-4 text-text-primary" />
-                </div>
+                <CheckIcon className="h-9 w-9 shrink-0 text-text-primary" />
                 <div className="flex-1">
                   <p className="text-[14px] font-semibold text-text-primary">
                     Guided tour complete

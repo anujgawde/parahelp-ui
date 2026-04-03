@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileIcon, EditIcon, CheckIcon } from "../icons";
+import { FileIcon, EditIcon } from "../icons";
 import type { ActionBlock } from "../../data/types";
 
 interface ActionsPanelProps {
@@ -79,7 +79,9 @@ export function ActionsPanel({
                   }`}
                 >
                   {selected.has(action.id) && (
-                    <CheckIcon className="h-3 w-3 text-white" />
+                    <svg className="h-3 w-3 text-white" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3.5,8.5 6.5,11.5 12.5,4.5" />
+                    </svg>
                   )}
                 </div>
                 <ActionLabel action={action} />
