@@ -789,6 +789,7 @@ function saveDismissed(d: Record<string, string>) {
 }
 
 export default function DashboardPage() {
+  const tour = useTour();
   const [showAll, setShowAll] = useState(false);
   const [dismissed, setDismissed] = useState<
     Record<string, "published" | "acknowledged" | "dismissed">
@@ -832,8 +833,19 @@ export default function DashboardPage() {
   return (
     <AppShell>
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 shrink-0 items-center border-b border-border-default px-4 md:px-6">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-default px-4 md:px-6">
           <h1 className="text-sm font-semibold text-text-primary">Dashboard</h1>
+          {!tour.active && (
+            <button
+              onClick={tour.start}
+              className="flex items-center gap-1.5 rounded-md border border-border-default px-2.5 py-1 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
+            >
+              <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="6,3 13,8 6,13" />
+              </svg>
+              Start tour
+            </button>
+          )}
         </header>
 
         <div className="flex-1 overflow-y-auto">
