@@ -1,5 +1,11 @@
 import type { RetrievedContextItem as ContextItemType } from "../../data/types";
-import { FileIcon, LinkIcon, StripeIcon, ZendeskIcon, ApprovalIcon } from "../icons";
+import {
+  FileIcon,
+  LinkIcon,
+  StripeIcon,
+  ZendeskIcon,
+  ApprovalIcon,
+} from "../icons";
 
 interface RetrievedContextItemProps {
   item: ContextItemType;

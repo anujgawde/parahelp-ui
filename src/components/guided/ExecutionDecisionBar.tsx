@@ -51,27 +51,8 @@ export function ExecutionDecisionBar({
     );
   }
 
-  if (executed) {
-    return (
-      <div className="rounded-xl bg-surface-secondary p-5 animate-fade-in">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-tertiary">
-            <svg className="h-5 w-5 text-text-primary" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3.5,8.5 6.5,11.5 12.5,4.5" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-[14px] font-semibold text-text-primary">
-              {selection === "modified" ? "Modified" : "Original"} plan executed successfully
-            </p>
-            <p className="text-[12px] text-text-secondary mt-0.5">
-              All steps have been processed. The ticket resolution is complete.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Hide decision bar once executed — parent handles showing the execution workflow
+  if (executed) return null;
 
   return (
     <div

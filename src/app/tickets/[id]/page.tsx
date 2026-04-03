@@ -66,7 +66,9 @@ function NormalTicketDetail({ id }: { id: string }) {
   const [editableSources, setEditableSources] = useState<ContextSource[]>([]);
   const [showSimulation, setShowSimulation] = useState(false);
   const [decided, setDecided] = useState(false);
-  const [execSelection, setExecSelection] = useState<"original" | "modified" | null>(null);
+  const [execSelection, setExecSelection] = useState<
+    "original" | "modified" | null
+  >(null);
   const [execExecuting, setExecExecuting] = useState(false);
   const [execExecuted, setExecExecuted] = useState(false);
 
@@ -74,10 +76,7 @@ function NormalTicketDetail({ id }: { id: string }) {
   const originalEditablePlan = useMemo(() => {
     if (!waitingApproval) return [];
     // Include all steps (completed + approval gate + remaining)
-    const allSteps = [
-      ...resolution.resolutionPlan,
-      ...remainingSteps,
-    ];
+    const allSteps = [...resolution.resolutionPlan, ...remainingSteps];
     return allSteps.map((s) => ({
       id: s.id,
       text: s.label,
@@ -187,12 +186,15 @@ function NormalTicketDetail({ id }: { id: string }) {
     setDecided(false);
 
     contextItems.forEach((item, i) => {
-      const t = setTimeout(() => {
-        setResolution((prev) => ({
-          ...prev,
-          retrievedContext: [...prev.retrievedContext, item],
-        }));
-      }, 400 + i * 500);
+      const t = setTimeout(
+        () => {
+          setResolution((prev) => ({
+            ...prev,
+            retrievedContext: [...prev.retrievedContext, item],
+          }));
+        },
+        400 + i * 500,
+      );
       timeouts.push(t);
     });
 
@@ -327,14 +329,20 @@ function NormalTicketDetail({ id }: { id: string }) {
   useEffect(() => {
     if (scrollRef.current) {
       setTimeout(() => {
-        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+        scrollRef.current?.scrollTo({
+          top: scrollRef.current.scrollHeight,
+          behavior: "smooth",
+        });
       }, 350);
     }
   }, [editMode, showSimulation, waitingApproval]);
 
   return (
     <AppShell>
-      <div ref={scrollRef} className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 pt-4 pb-12 md:flex-row md:gap-8 md:px-8 md:pt-8 md:pb-16">
+      <div
+        ref={scrollRef}
+        className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 pt-4 pb-12 md:flex-row md:gap-8 md:px-8 md:pt-8 md:pb-16"
+      >
         {/* Left: Support ticket */}
         <div className="w-full shrink-0 md:w-[45%]">
           <SupportTicketCard
@@ -388,7 +396,7 @@ function NormalTicketDetail({ id }: { id: string }) {
                     Resolution plan
                   </h3>
                 </div>
-                <div className="flex flex-col pl-1">
+                <div className="flex flex-col">
                   {resolution.resolutionPlan.map((step) => (
                     <PlanStepComponent key={step.id} step={step} />
                   ))}
@@ -425,7 +433,11 @@ function NormalTicketDetail({ id }: { id: string }) {
                     Review &amp; refine plan
                   </button>
                   <button
-                    onClick={() => { setExecSelection("original"); setEditMode(true); setShowSimulation(true); }}
+                    onClick={() => {
+                      setExecSelection("original");
+                      setEditMode(true);
+                      setShowSimulation(true);
+                    }}
                     className="rounded-lg border border-border-strong px-4 py-2.5 text-[13px] font-medium text-text-secondary transition-colors hover:bg-surface-tertiary"
                   >
                     Approve as-is
@@ -587,4 +599,3 @@ function TicketChips({ ticketId }: { ticketId: string }) {
     </div>
   );
 }
-

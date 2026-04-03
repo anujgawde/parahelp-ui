@@ -59,12 +59,6 @@ export const GUIDED_STEPS: GuidedStep[] = [
       "Compare metrics between the original agent plan and your modified version.",
   },
   {
-    id: "decide",
-    title: "Choose a plan",
-    description:
-      "Select which plan to execute: the original or your refined version.",
-  },
-  {
     id: "execute",
     title: "Execute",
     description:

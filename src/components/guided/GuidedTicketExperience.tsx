@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useTour } from "./TourProvider";
 import { SupportTicketCard } from "@/components/ticket/SupportTicketCard";
+import { RetrievedContextItem } from "@/components/ticket/RetrievedContextItem";
+import { ResolutionPlanStep as PlanStepComponent } from "@/components/ticket/ResolutionPlanStep";
+import { SparkleIcon } from "@/components/icons";
 import { GuidedStepOverlay } from "./GuidedStepOverlay";
 import { ContextSourceManager } from "./ContextSourceManager";
 import { EditablePlanCard } from "./EditablePlanCard";
@@ -17,6 +20,11 @@ import {
   computeSimulation,
 } from "./types";
 import type { EditablePlanStep, ContextSource } from "./types";
+import type {
+  ResolutionPlanStep,
+  RetrievedContextItem as CtxItem,
+} from "@/data/types";
+import { ticketResolutions } from "@/data/agent-reasoning";
 
 export function GuidedTicketExperience() {
   const router = useRouter();
@@ -30,13 +38,26 @@ export function GuidedTicketExperience() {
   const [simulationRun, setSimulationRun] = useState(false);
 
   // Execution state
-  const [selection, setSelection] = useState<"original" | "modified" | null>(null);
+  const [selection, setSelection] = useState<"original" | "modified" | null>(
+    null,
+  );
   const [executing, setExecuting] = useState(false);
   const [executed, setExecuted] = useState(false);
+  const [workflowComplete, setWorkflowComplete] = useState(false);
+
+  // Real-time workflow state (same as normal ticket flow)
+  const [workflowContext, setWorkflowContext] = useState<CtxItem[]>([]);
+  const [workflowSteps, setWorkflowSteps] = useState<ResolutionPlanStep[]>([]);
 
   // Keep original copies for comparison
-  const originalPlan = useMemo(() => SSO_ORIGINAL_PLAN.map((s) => ({ ...s })), []);
-  const originalSources = useMemo(() => SSO_CONTEXT_SOURCES.map((s) => ({ ...s })), []);
+  const originalPlan = useMemo(
+    () => SSO_ORIGINAL_PLAN.map((s) => ({ ...s })),
+    [],
+  );
+  const originalSources = useMemo(
+    () => SSO_CONTEXT_SOURCES.map((s) => ({ ...s })),
+    [],
+  );
 
   // Detect modifications
   const hasModifications = useMemo(() => {
@@ -72,6 +93,62 @@ export function GuidedTicketExperience() {
     }
   }, [currentStep, simulationRun]);
 
+  // Animate real-time workflow after execution (same as normal ticket flow)
+  useEffect(() => {
+    if (!executed) return;
+
+    const sourceData = ticketResolutions["TK-4200"];
+    if (!sourceData) return;
+
+    const contextItems = sourceData.retrievedContext;
+    const planSteps = sourceData.resolutionPlan;
+    const timeouts: NodeJS.Timeout[] = [];
+
+    setWorkflowContext([]);
+    setWorkflowSteps([]);
+
+    // Animate context items
+    contextItems.forEach((item, i) => {
+      timeouts.push(
+        setTimeout(
+          () => {
+            setWorkflowContext((prev) => [...prev, item]);
+          },
+          400 + i * 500,
+        ),
+      );
+    });
+
+    // Animate plan steps
+    const contextDelay = 400 + contextItems.length * 500;
+    let stepDelay = contextDelay + 300;
+
+    planSteps.forEach((step, i) => {
+      // Show as loading
+      timeouts.push(
+        setTimeout(() => {
+          setWorkflowSteps((prev) => [...prev, { ...step, status: "loading" }]);
+        }, stepDelay),
+      );
+      // Mark as complete
+      timeouts.push(
+        setTimeout(() => {
+          setWorkflowSteps((prev) =>
+            prev.map((s) =>
+              s.id === step.id ? { ...s, status: "complete" } : s,
+            ),
+          );
+          if (i === planSteps.length - 1) {
+            setTimeout(() => setWorkflowComplete(true), 400);
+          }
+        }, stepDelay + 500),
+      );
+      stepDelay += 700;
+    });
+
+    return () => timeouts.forEach(clearTimeout);
+  }, [executed]);
+
   // Section refs for scroll
   const issueRef = useRef<HTMLDivElement>(null);
   const contextRef = useRef<HTMLDivElement>(null);
@@ -82,7 +159,7 @@ export function GuidedTicketExperience() {
 
   // Scroll to relevant section on step change
   useEffect(() => {
-    const refs = [issueRef, contextRef, planRef, planRef, simRef, decisionRef, decisionRef];
+    const refs = [issueRef, contextRef, planRef, planRef, simRef, decisionRef];
     const ref = refs[currentStep];
     // Delay for elements that animate in
     const delay = currentStep >= 4 ? 400 : 100;
@@ -120,40 +197,29 @@ export function GuidedTicketExperience() {
     setCurrentStep(3);
   }, []);
 
-  // When user selects a plan, auto-advance to step 7 (execute)
   function handleSelect(sel: "original" | "modified" | null) {
     setSelection(sel);
-    if (sel && currentStep === 5) {
-      setCurrentStep(6);
-    }
   }
 
   function handleExecute() {
     if (!selection) return;
     setExecuting(true);
-    setCurrentStep(6); // ensure we're on execute step
+    setCurrentStep(5);
     setTimeout(() => {
       setExecuting(false);
       setExecuted(true);
     }, 2000);
   }
 
-  // handleNext also triggers selection/execution for steps 5 and 6
   const handleNext = useCallback(() => {
-    if (currentStep === 5 && selection) {
-      // Step 6: "Choose a plan" done → advance to Execute
-      setCurrentStep(6);
-      return;
-    }
-    if (currentStep === 6 && selection && !executing && !executed) {
-      // Step 7: trigger execute
+    if (currentStep === 5 && selection && !executing && !executed) {
       handleExecute();
       return;
     }
     setCurrentStep((s) => Math.min(s + 1, GUIDED_STEPS.length - 1));
   }, [currentStep, selection, executing, executed]);
 
-  // Auto-select default when reaching the decision step
+  // Auto-select default when reaching the execute step
   useEffect(() => {
     if (currentStep === 5 && !selection) {
       setSelection(hasModifications ? "modified" : "original");
@@ -218,7 +284,14 @@ export function GuidedTicketExperience() {
             <div className="flex flex-col gap-5">
               {/* Header */}
               <div className="flex items-center gap-2">
-                <Image src="/logo.png" alt="" width={20} height={20} className="h-8 w-8" unoptimized />
+                <Image
+                  src="/logo.png"
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="h-8 w-8"
+                  unoptimized
+                />
                 <h2 className="text-[16px] font-semibold text-text-primary">
                   Agent reasoning
                 </h2>
@@ -227,73 +300,121 @@ export function GuidedTicketExperience() {
                 </div>
               </div>
 
-              {/* Context Sources */}
-              {showContext && (
-                <div ref={contextRef} className="animate-guide-section">
-                  <ContextSourceManager
-                    sources={sources}
-                    onChange={setSources}
-                    editable={planEditable}
-                    highlighted={currentStep === 1 || currentStep === 3}
-                  />
-                </div>
+              {/* Before execution: editable flow */}
+              {!executed && (
+                <>
+                  {/* Context Sources */}
+                  {showContext && (
+                    <div ref={contextRef} className="animate-guide-section">
+                      <ContextSourceManager
+                        sources={sources}
+                        onChange={setSources}
+                        editable={planEditable}
+                        highlighted={currentStep === 1 || currentStep === 3}
+                      />
+                    </div>
+                  )}
+
+                  {/* Resolution Plan */}
+                  {showPlan && (
+                    <div ref={planRef} className="animate-guide-section">
+                      <EditablePlanCard
+                        steps={plan}
+                        onChange={setPlan}
+                        editable={planEditable}
+                        highlighted={currentStep === 2 || currentStep === 3}
+                      />
+                    </div>
+                  )}
+
+                  {/* Simulate button */}
+                  {planEditable && !showSimulation && (
+                    <div className="flex justify-center animate-fade-in">
+                      <button
+                        onClick={() => {
+                          setSimulationRun(true);
+                          setCurrentStep(4);
+                        }}
+                        className="flex items-center gap-2 rounded-lg bg-surface-inverse px-5 py-2.5 text-[13px] font-medium text-text-inverse transition-all hover:bg-surface-inverse/90 hover:shadow-lg"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="2,8 5,8 7,4 9,12 11,8 14,8" />
+                        </svg>
+                        Simulate outcome
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Simulation Panel */}
+                  {showSimulation && simulationRun && (
+                    <div ref={simRef} className="animate-guide-section">
+                      <SimulationPanel
+                        original={simulation.original}
+                        modified={simulation.modified}
+                        highlighted={currentStep === 4}
+                      />
+                    </div>
+                  )}
+
+                  {/* Execution Decision */}
+                  {showDecision && (
+                    <div ref={decisionRef} className="animate-guide-section">
+                      <ExecutionDecisionBar
+                        hasModifications={hasModifications}
+                        highlighted={currentStep === 5}
+                        selection={selection}
+                        onSelect={handleSelect}
+                        onExecute={handleExecute}
+                        onReturn={handleReturn}
+                        executing={executing}
+                        executed={executed}
+                      />
+                    </div>
+                  )}
+                </>
               )}
 
-              {/* Resolution Plan */}
-              {showPlan && (
-                <div ref={planRef} className="animate-guide-section">
-                  <EditablePlanCard
-                    steps={plan}
-                    onChange={setPlan}
-                    editable={planEditable}
-                    highlighted={currentStep === 2 || currentStep === 3}
-                  />
-                </div>
-              )}
+              {/* After execution: normal resolution workflow */}
+              {executed && (
+                <>
+                  {/* Retrieved context */}
+                  <div className="animate-fade-in">
+                    <div className="flex items-center gap-2 mb-3">
+                      <SparkleIcon className="h-4 w-4 text-text-tertiary" />
+                      <h3 className="text-[14px] font-semibold text-text-primary">
+                        Retrieved context
+                      </h3>
+                    </div>
+                    <div className="flex flex-col pl-1">
+                      {workflowContext.map((item) => (
+                        <RetrievedContextItem key={item.id} item={item} />
+                      ))}
+                    </div>
+                  </div>
 
-              {/* Simulate button */}
-              {planEditable && !showSimulation && (
-                <div className="flex justify-center animate-fade-in">
-                  <button
-                    onClick={() => {
-                      setSimulationRun(true);
-                      setCurrentStep(4);
-                    }}
-                    className="flex items-center gap-2 rounded-lg bg-surface-inverse px-5 py-2.5 text-[13px] font-medium text-text-inverse transition-all hover:bg-surface-inverse/90 hover:shadow-lg"
-                  >
-                    <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="2,8 5,8 7,4 9,12 11,8 14,8" />
-                    </svg>
-                    Simulate outcome
-                  </button>
-                </div>
-              )}
-
-              {/* Simulation Panel */}
-              {showSimulation && simulationRun && (
-                <div ref={simRef} className="animate-guide-section">
-                  <SimulationPanel
-                    original={simulation.original}
-                    modified={simulation.modified}
-                    highlighted={currentStep === 4}
-                  />
-                </div>
-              )}
-
-              {/* Execution Decision */}
-              {showDecision && (
-                <div ref={decisionRef} className="animate-guide-section">
-                  <ExecutionDecisionBar
-                    hasModifications={hasModifications}
-                    highlighted={currentStep === 5 || currentStep === 6}
-                    selection={selection}
-                    onSelect={handleSelect}
-                    onExecute={handleExecute}
-                    onReturn={handleReturn}
-                    executing={executing}
-                    executed={executed}
-                  />
-                </div>
+                  {/* Resolution plan */}
+                  <div className="animate-fade-in">
+                    <div className="flex items-center gap-2 mb-3">
+                      <SparkleIcon className="h-4 w-4 text-text-tertiary" />
+                      <h3 className="text-[14px] font-semibold text-text-primary">
+                        Resolution plan
+                      </h3>
+                    </div>
+                    <div className="flex flex-col pl-1">
+                      {workflowSteps.map((step) => (
+                        <PlanStepComponent key={step.id} step={step} />
+                      ))}
+                    </div>
+                  </div>
+                </>
               )}
 
               {/* Bottom spacer */}
@@ -310,9 +431,11 @@ export function GuidedTicketExperience() {
         onNext={handleNext}
         onPrev={handlePrev}
         onExit={handleExit}
-        showDashboardButton={executed}
+        showDashboardButton={workflowComplete}
         onGoToDashboard={handleGoToDashboard}
-        executeReady={currentStep === 6 && !!selection && !executing && !executed}
+        executeReady={
+          currentStep === 5 && !!selection && !executing && !executed
+        }
         onExecute={handleExecute}
         executing={executing}
       />
@@ -330,7 +453,6 @@ function StateIndicator({ step }: { step: number }) {
     { label: "Awaiting refinement", color: "bg-accent" },
     { label: "Simulating", color: "bg-badge-purple" },
     { label: "Ready to execute", color: "bg-badge-green" },
-    { label: "Executing", color: "bg-badge-green" },
   ];
 
   const current = states[step];
@@ -338,7 +460,9 @@ function StateIndicator({ step }: { step: number }) {
 
   return (
     <div className="flex items-center gap-1.5 rounded-full bg-surface-tertiary px-2.5 py-1">
-      <div className={`h-1.5 w-1.5 rounded-full ${current.color} animate-pulse`} />
+      <div
+        className={`h-1.5 w-1.5 rounded-full ${current.color} animate-pulse`}
+      />
       <span className="text-[11px] font-medium text-text-secondary">
         {current.label}
       </span>
