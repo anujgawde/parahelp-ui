@@ -287,7 +287,7 @@ function ActionCard({
     setConfirmDismissing(true);
     setTimeout(() => {
       setConfirmGone(true);
-      onDismiss(action.id, doneType ?? "dismissed");
+      onDismiss(action.id, "dismissed");
     }, 300);
   }
 
