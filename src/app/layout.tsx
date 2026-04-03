@@ -16,7 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Parahelp",
-  description: "Parahelp Admin",
+  description:
+    "Operator command center for AI support agents — act on configs, tests, and tickets inline",
 };
 
 export default function RootLayout({
