@@ -5,32 +5,32 @@ import { useState } from "react";
 interface ExecutionDecisionBarProps {
   hasModifications: boolean;
   highlighted: boolean;
-  onDecision: (decision: "original" | "modified" | "return") => void;
+  onSelect: (selection: "original" | "modified" | null) => void;
+  onExecute: () => void;
+  onReturn: () => void;
+  selection: "original" | "modified" | null;
+  executing: boolean;
+  executed: boolean;
 }
 
 export function ExecutionDecisionBar({
   hasModifications,
   highlighted,
-  onDecision,
+  onSelect,
+  onExecute,
+  onReturn,
+  selection,
+  executing,
+  executed,
 }: ExecutionDecisionBarProps) {
-  const [selected, setSelected] = useState<"original" | "modified" | null>(
-    null,
-  );
-  const [executed, setExecuted] = useState(false);
   const [returning, setReturning] = useState(false);
 
-  function handleExecute(choice: "original" | "modified" | "return") {
-    if (choice === "return") {
-      setReturning(true);
-      setTimeout(() => {
-        onDecision("return");
-        setReturning(false);
-      }, 1800);
-      return;
-    }
-    setSelected(choice);
-    setExecuted(true);
-    onDecision(choice);
+  function handleReturn() {
+    setReturning(true);
+    setTimeout(() => {
+      onReturn();
+      setReturning(false);
+    }, 1800);
   }
 
   if (returning) {
@@ -38,25 +38,13 @@ export function ExecutionDecisionBar({
       <div className="rounded-xl border border-badge-blue/30 bg-badge-blue-soft/30 p-5 animate-fade-in">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-badge-blue/10">
-            <svg
-              className="h-5 w-5 text-badge-blue animate-spin"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            >
+            <svg className="h-5 w-5 text-badge-blue animate-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M8 2a6 6 0 0 1 6 6" />
             </svg>
           </div>
           <div>
-            <p className="text-[14px] font-semibold text-text-primary">
-              Sent back to agent
-            </p>
-            <p className="text-[12px] text-text-secondary mt-0.5">
-              The agent is re-evaluating the plan with updated context.
-              A new proposal will appear shortly.
-            </p>
+            <p className="text-[14px] font-semibold text-text-primary">Sent back to agent</p>
+            <p className="text-[12px] text-text-secondary mt-0.5">The agent is re-evaluating the plan with updated context.</p>
           </div>
         </div>
       </div>
@@ -68,26 +56,16 @@ export function ExecutionDecisionBar({
       <div className="rounded-xl border border-badge-green/30 bg-badge-green-soft/30 p-5 animate-fade-in">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-badge-green/10">
-            <svg
-              className="h-5 w-5 text-badge-green"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+            <svg className="h-5 w-5 text-badge-green" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="3.5,8.5 6.5,11.5 12.5,4.5" />
             </svg>
           </div>
           <div>
             <p className="text-[14px] font-semibold text-text-primary">
-              {selected === "modified" ? "Modified" : "Original"} plan approved
-              for execution
+              {selection === "modified" ? "Modified" : "Original"} plan executed successfully
             </p>
             <p className="text-[12px] text-text-secondary mt-0.5">
-              The agent will execute the {selected} plan. All steps will be
-              processed in order.
+              All steps have been processed. The ticket resolution is complete.
             </p>
           </div>
         </div>
@@ -107,27 +85,28 @@ export function ExecutionDecisionBar({
         Execute decision
       </h4>
       <p className="text-[12px] text-text-secondary mb-4">
-        Choose which plan the agent should execute.
+        Select which plan the agent should execute.
       </p>
 
       <div className="flex flex-col gap-2">
         {/* Approve Original */}
         <button
-          onClick={() => handleExecute("original")}
+          onClick={() => onSelect(selection === "original" ? null : "original")}
+          disabled={executing}
           className={`group flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all hover:border-border-strong ${
-            selected === "original"
+            selection === "original"
               ? "border-text-primary bg-surface-tertiary"
               : "border-border-default bg-surface-primary"
           }`}
         >
           <div
             className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-              selected === "original"
+              selection === "original"
                 ? "border-text-primary bg-text-primary"
                 : "border-border-strong"
             }`}
           >
-            {selected === "original" && (
+            {selection === "original" && (
               <div className="h-2 w-2 rounded-full bg-white" />
             )}
           </div>
@@ -143,24 +122,24 @@ export function ExecutionDecisionBar({
 
         {/* Approve Modified */}
         <button
-          onClick={() => handleExecute("modified")}
-          disabled={!hasModifications}
+          onClick={() => onSelect(selection === "modified" ? null : "modified")}
+          disabled={!hasModifications || executing}
           className={`group flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all ${
             !hasModifications
               ? "border-border-default bg-surface-tertiary/50 opacity-60 cursor-not-allowed"
-              : selected === "modified"
+              : selection === "modified"
                 ? "border-accent bg-accent-soft/30"
                 : "border-border-default bg-surface-primary hover:border-accent/40"
           }`}
         >
           <div
             className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-              selected === "modified"
+              selection === "modified"
                 ? "border-accent bg-accent"
                 : "border-border-strong"
             }`}
           >
-            {selected === "modified" && (
+            {selection === "modified" && (
               <div className="h-2 w-2 rounded-full bg-white" />
             )}
           </div>
@@ -183,24 +162,37 @@ export function ExecutionDecisionBar({
 
         {/* Send back */}
         <button
-          onClick={() => handleExecute("return")}
+          onClick={handleReturn}
+          disabled={executing}
           className="flex items-center gap-3 rounded-lg border border-border-default px-4 py-2.5 text-left transition-all hover:bg-surface-secondary"
         >
-          <svg
-            className="h-4 w-4 shrink-0 text-text-tertiary"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
+          <svg className="h-4 w-4 shrink-0 text-text-tertiary" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="6,3 2,7 6,11" />
             <path d="M2,7 H11 a3,3 0 0 1 0,6 H9" />
           </svg>
           <span className="text-[12px] text-text-secondary">
             Send back to agent for re-evaluation
           </span>
+        </button>
+      </div>
+
+      {/* Execute button */}
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={onExecute}
+          disabled={!selection || executing}
+          className={`flex h-9 items-center gap-2 rounded-lg px-5 text-[13px] font-medium transition-all ${
+            selection && !executing
+              ? "bg-surface-inverse text-text-inverse hover:bg-surface-inverse/90"
+              : "bg-surface-tertiary text-text-tertiary cursor-not-allowed"
+          }`}
+        >
+          {executing && (
+            <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M8 2a6 6 0 0 1 6 6" />
+            </svg>
+          )}
+          {executing ? "Executing..." : "Execute"}
         </button>
       </div>
     </div>

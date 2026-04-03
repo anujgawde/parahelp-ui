@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, use } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, use } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { AppShell } from "@/components/layout";
@@ -66,6 +66,9 @@ function NormalTicketDetail({ id }: { id: string }) {
   const [editableSources, setEditableSources] = useState<ContextSource[]>([]);
   const [showSimulation, setShowSimulation] = useState(false);
   const [decided, setDecided] = useState(false);
+  const [execSelection, setExecSelection] = useState<"original" | "modified" | null>(null);
+  const [execExecuting, setExecExecuting] = useState(false);
+  const [execExecuted, setExecExecuted] = useState(false);
 
   // Convert resolution plan steps to editable format when entering edit mode
   const originalEditablePlan = useMemo(() => {
@@ -157,6 +160,13 @@ function NormalTicketDetail({ id }: { id: string }) {
       editablePlan.some((s) => !s.isOriginal)
     );
   }, [editablePlan, editableSources, originalEditablePlan, originalSources]);
+
+  // Default selection when simulation is shown
+  useEffect(() => {
+    if (showSimulation && !execSelection) {
+      setExecSelection(hasModifications ? "modified" : "original");
+    }
+  }, [showSimulation, execSelection, hasModifications]);
 
   // Animate context items + plan steps
   useEffect(() => {
@@ -250,14 +260,25 @@ function NormalTicketDetail({ id }: { id: string }) {
     setShowSimulation(false);
   }
 
-  // Handle final decision from editable mode
-  function handleDecision(decision: "original" | "modified" | "return") {
-    if (decision === "return") {
-      // Reset back to editable plan view — "agent re-evaluated"
-      setShowSimulation(false);
-      return;
-    }
+  function handleReturn() {
+    setShowSimulation(false);
+    setExecSelection(null);
+  }
 
+  function handleExecute() {
+    if (!execSelection) return;
+    setExecExecuting(true);
+    setTimeout(() => {
+      setExecExecuting(false);
+      setExecExecuted(true);
+      // Continue with remaining steps after a beat
+      setTimeout(() => {
+        finishExecution();
+      }, 1000);
+    }, 2000);
+  }
+
+  function finishExecution() {
     setDecided(true);
     setEditMode(false);
     setWaitingApproval(false);
@@ -300,9 +321,20 @@ function NormalTicketDetail({ id }: { id: string }) {
     setRemainingSteps([]);
   }
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom when new sections appear
+  useEffect(() => {
+    if (scrollRef.current) {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      }, 350);
+    }
+  }, [editMode, showSimulation, waitingApproval]);
+
   return (
     <AppShell>
-      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 pt-4 pb-12 md:flex-row md:gap-8 md:px-8 md:pt-8 md:pb-16">
+      <div ref={scrollRef} className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 pt-4 pb-12 md:flex-row md:gap-8 md:px-8 md:pt-8 md:pb-16">
         {/* Left: Support ticket */}
         <div className="w-full shrink-0 md:w-[45%]">
           <SupportTicketCard
@@ -393,7 +425,7 @@ function NormalTicketDetail({ id }: { id: string }) {
                     Review &amp; refine plan
                   </button>
                   <button
-                    onClick={() => handleDecision("original")}
+                    onClick={() => { setExecSelection("original"); setEditMode(true); setShowSimulation(true); }}
                     className="rounded-lg border border-border-strong px-4 py-2.5 text-[13px] font-medium text-text-secondary transition-colors hover:bg-surface-tertiary"
                   >
                     Approve as-is
@@ -461,7 +493,12 @@ function NormalTicketDetail({ id }: { id: string }) {
                     <ExecutionDecisionBar
                       hasModifications={hasModifications}
                       highlighted={false}
-                      onDecision={handleDecision}
+                      selection={execSelection}
+                      onSelect={setExecSelection}
+                      onExecute={handleExecute}
+                      onReturn={handleReturn}
+                      executing={execExecuting}
+                      executed={execExecuted}
                     />
                   </div>
                 )}
@@ -550,3 +587,4 @@ function TicketChips({ ticketId }: { ticketId: string }) {
     </div>
   );
 }
+

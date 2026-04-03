@@ -60,9 +60,15 @@ export const GUIDED_STEPS: GuidedStep[] = [
   },
   {
     id: "decide",
-    title: "Execute decision",
+    title: "Choose a plan",
     description:
-      "Choose which plan to execute: the original or your refined version.",
+      "Select which plan to execute: the original or your refined version.",
+  },
+  {
+    id: "execute",
+    title: "Execute",
+    description:
+      "Confirm and execute the selected plan. The agent will process all steps in order.",
   },
 ];
 

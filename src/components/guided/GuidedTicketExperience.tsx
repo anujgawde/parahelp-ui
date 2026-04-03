@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useTour } from "./TourProvider";
 import { SupportTicketCard } from "@/components/ticket/SupportTicketCard";
 import { GuidedStepOverlay } from "./GuidedStepOverlay";
 import { ContextSourceManager } from "./ContextSourceManager";
@@ -27,6 +28,11 @@ export function GuidedTicketExperience() {
     SSO_CONTEXT_SOURCES.map((s) => ({ ...s })),
   );
   const [simulationRun, setSimulationRun] = useState(false);
+
+  // Execution state
+  const [selection, setSelection] = useState<"original" | "modified" | null>(null);
+  const [executing, setExecuting] = useState(false);
+  const [executed, setExecuted] = useState(false);
 
   // Keep original copies for comparison
   const originalPlan = useMemo(() => SSO_ORIGINAL_PLAN.map((s) => ({ ...s })), []);
@@ -72,41 +78,87 @@ export function GuidedTicketExperience() {
   const planRef = useRef<HTMLDivElement>(null);
   const simRef = useRef<HTMLDivElement>(null);
   const decisionRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Scroll to relevant section on step change
   useEffect(() => {
-    const refs = [issueRef, contextRef, planRef, planRef, simRef, decisionRef];
+    const refs = [issueRef, contextRef, planRef, planRef, simRef, decisionRef, decisionRef];
     const ref = refs[currentStep];
-    if (ref?.current) {
-      ref.current.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+    // Delay for elements that animate in
+    const delay = currentStep >= 4 ? 400 : 100;
+    const t = setTimeout(() => {
+      if (ref?.current) {
+        ref.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, delay);
+    return () => clearTimeout(t);
   }, [currentStep]);
-
-  const handleNext = useCallback(() => {
-    setCurrentStep((s) => Math.min(s + 1, GUIDED_STEPS.length - 1));
-  }, []);
 
   const handlePrev = useCallback(() => {
     setCurrentStep((s) => Math.max(s - 1, 0));
   }, []);
 
+  const tour = useTour();
+
   const handleExit = useCallback(() => {
     localStorage.setItem("parahelp-demo-completed", "true");
-    router.push("/chats/TK-4200");
-  }, [router]);
+    localStorage.setItem("parahelp-tour-show-complete", "true");
+    tour.exit();
+    router.push("/dashboard");
+  }, [router, tour]);
 
-  const handleDecision = useCallback(
-    (decision: "original" | "modified" | "return") => {
-      if (decision === "return") {
-        setSimulationRun(false);
-        setCurrentStep(3); // back to refine step
-        return;
-      }
-      // Demo complete
-      localStorage.setItem("parahelp-demo-completed", "true");
-    },
-    [],
-  );
+  const handleGoToDashboard = useCallback(() => {
+    localStorage.setItem("parahelp-demo-completed", "true");
+    localStorage.setItem("parahelp-tour-show-complete", "true");
+    tour.exit();
+    router.push("/dashboard");
+  }, [router, tour]);
+
+  const handleReturn = useCallback(() => {
+    setSimulationRun(false);
+    setSelection(null);
+    setCurrentStep(3);
+  }, []);
+
+  // When user selects a plan, auto-advance to step 7 (execute)
+  function handleSelect(sel: "original" | "modified" | null) {
+    setSelection(sel);
+    if (sel && currentStep === 5) {
+      setCurrentStep(6);
+    }
+  }
+
+  function handleExecute() {
+    if (!selection) return;
+    setExecuting(true);
+    setCurrentStep(6); // ensure we're on execute step
+    setTimeout(() => {
+      setExecuting(false);
+      setExecuted(true);
+    }, 2000);
+  }
+
+  // handleNext also triggers selection/execution for steps 5 and 6
+  const handleNext = useCallback(() => {
+    if (currentStep === 5 && selection) {
+      // Step 6: "Choose a plan" done → advance to Execute
+      setCurrentStep(6);
+      return;
+    }
+    if (currentStep === 6 && selection && !executing && !executed) {
+      // Step 7: trigger execute
+      handleExecute();
+      return;
+    }
+    setCurrentStep((s) => Math.min(s + 1, GUIDED_STEPS.length - 1));
+  }, [currentStep, selection, executing, executed]);
+
+  // Auto-select default when reaching the decision step
+  useEffect(() => {
+    if (currentStep === 5 && !selection) {
+      setSelection(hasModifications ? "modified" : "original");
+    }
+  }, [currentStep, selection, hasModifications]);
 
   // State indicators for progressive reveal
   const showContext = currentStep >= 1;
@@ -137,19 +189,14 @@ export function GuidedTicketExperience() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" ref={scrollContainerRef}>
         <div className="flex flex-col gap-6 p-4 pb-8 md:flex-row md:gap-8 md:p-8 md:pb-12">
           {/* Left: Support ticket */}
-          <div
-            ref={issueRef}
-            className="w-full shrink-0 md:w-[42%]"
-          >
+          <div ref={issueRef} className="w-full shrink-0 md:w-[42%]">
             <SupportTicketCard
               title="Support ticket"
               message="I can't log in with SSO anymore. It was working fine yesterday but now I get a 403 Forbidden error. I've tried clearing cookies and using incognito. Our team of 15 people is locked out."
             />
-
-            {/* Ticket metadata */}
             <div className="mt-3 flex flex-wrap gap-2">
               <span className="rounded-full bg-risk-high-soft px-2.5 py-1 text-[11px] font-medium text-risk-high">
                 Escalated
@@ -171,19 +218,10 @@ export function GuidedTicketExperience() {
             <div className="flex flex-col gap-5">
               {/* Header */}
               <div className="flex items-center gap-2">
-                <Image
-                  src="/logo.png"
-                  alt=""
-                  width={20}
-                  height={20}
-                  className="h-8 w-8"
-                  unoptimized
-                />
+                <Image src="/logo.png" alt="" width={20} height={20} className="h-8 w-8" unoptimized />
                 <h2 className="text-[16px] font-semibold text-text-primary">
                   Agent reasoning
                 </h2>
-
-                {/* State indicator */}
                 <div className="ml-auto flex items-center gap-1.5">
                   <StateIndicator step={currentStep} />
                 </div>
@@ -191,10 +229,7 @@ export function GuidedTicketExperience() {
 
               {/* Context Sources */}
               {showContext && (
-                <div
-                  ref={contextRef}
-                  className="animate-guide-section"
-                >
+                <div ref={contextRef} className="animate-guide-section">
                   <ContextSourceManager
                     sources={sources}
                     onChange={setSources}
@@ -206,10 +241,7 @@ export function GuidedTicketExperience() {
 
               {/* Resolution Plan */}
               {showPlan && (
-                <div
-                  ref={planRef}
-                  className="animate-guide-section"
-                >
+                <div ref={planRef} className="animate-guide-section">
                   <EditablePlanCard
                     steps={plan}
                     onChange={setPlan}
@@ -219,7 +251,7 @@ export function GuidedTicketExperience() {
                 </div>
               )}
 
-              {/* Simulate button (between plan and simulation panel) */}
+              {/* Simulate button */}
               {planEditable && !showSimulation && (
                 <div className="flex justify-center animate-fade-in">
                   <button
@@ -229,15 +261,7 @@ export function GuidedTicketExperience() {
                     }}
                     className="flex items-center gap-2 rounded-lg bg-surface-inverse px-5 py-2.5 text-[13px] font-medium text-text-inverse transition-all hover:bg-surface-inverse/90 hover:shadow-lg"
                   >
-                    <svg
-                      className="h-4 w-4"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                    <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="2,8 5,8 7,4 9,12 11,8 14,8" />
                     </svg>
                     Simulate outcome
@@ -247,10 +271,7 @@ export function GuidedTicketExperience() {
 
               {/* Simulation Panel */}
               {showSimulation && simulationRun && (
-                <div
-                  ref={simRef}
-                  className="animate-guide-section"
-                >
+                <div ref={simRef} className="animate-guide-section">
                   <SimulationPanel
                     original={simulation.original}
                     modified={simulation.modified}
@@ -261,17 +282,22 @@ export function GuidedTicketExperience() {
 
               {/* Execution Decision */}
               {showDecision && (
-                <div
-                  ref={decisionRef}
-                  className="animate-guide-section"
-                >
+                <div ref={decisionRef} className="animate-guide-section">
                   <ExecutionDecisionBar
                     hasModifications={hasModifications}
-                    highlighted={currentStep === 5}
-                    onDecision={handleDecision}
+                    highlighted={currentStep === 5 || currentStep === 6}
+                    selection={selection}
+                    onSelect={handleSelect}
+                    onExecute={handleExecute}
+                    onReturn={handleReturn}
+                    executing={executing}
+                    executed={executed}
                   />
                 </div>
               )}
+
+              {/* Bottom spacer */}
+              <div className="h-8 shrink-0" />
             </div>
           </div>
         </div>
@@ -284,6 +310,11 @@ export function GuidedTicketExperience() {
         onNext={handleNext}
         onPrev={handlePrev}
         onExit={handleExit}
+        showDashboardButton={executed}
+        onGoToDashboard={handleGoToDashboard}
+        executeReady={currentStep === 6 && !!selection && !executing && !executed}
+        onExecute={handleExecute}
+        executing={executing}
       />
     </div>
   );
@@ -299,6 +330,7 @@ function StateIndicator({ step }: { step: number }) {
     { label: "Awaiting refinement", color: "bg-accent" },
     { label: "Simulating", color: "bg-badge-purple" },
     { label: "Ready to execute", color: "bg-badge-green" },
+    { label: "Executing", color: "bg-badge-green" },
   ];
 
   const current = states[step];

@@ -8,6 +8,11 @@ interface GuidedStepOverlayProps {
   onNext: () => void;
   onPrev: () => void;
   onExit: () => void;
+  showDashboardButton?: boolean;
+  onGoToDashboard?: () => void;
+  executeReady?: boolean;
+  onExecute?: () => void;
+  executing?: boolean;
 }
 
 export function GuidedStepOverlay({
@@ -16,6 +21,11 @@ export function GuidedStepOverlay({
   onNext,
   onPrev,
   onExit,
+  showDashboardButton,
+  onGoToDashboard,
+  executeReady,
+  onExecute,
+  executing,
 }: GuidedStepOverlayProps) {
   const step = GUIDED_STEPS[currentStep];
   if (!step) return null;
@@ -55,35 +65,81 @@ export function GuidedStepOverlay({
 
         {/* Controls */}
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={onExit}
-            className="text-[12px] text-text-tertiary transition-colors hover:text-text-secondary mr-2"
-          >
-            Exit
-          </button>
-          {!isFirst && (
+          {/* Tour complete → Go to dashboard */}
+          {showDashboardButton && (
             <button
-              onClick={onPrev}
-              className="flex h-7 items-center rounded-md border border-border-default px-2.5 text-[12px] font-medium text-text-secondary transition-colors hover:bg-surface-secondary"
+              onClick={onGoToDashboard}
+              className="flex h-8 items-center rounded-md bg-accent px-4 text-[12px] font-medium text-white transition-colors hover:bg-accent-hover"
             >
-              Back
+              Go back to dashboard
             </button>
           )}
-          {!isLast && (
+
+          {/* Step 7 (execute) → Execute button */}
+          {!showDashboardButton && isLast && executeReady && (
             <button
-              onClick={onNext}
-              className="flex h-7 items-center rounded-md bg-accent px-3 text-[12px] font-medium text-white transition-colors hover:bg-accent-hover"
+              onClick={onExecute}
+              className="flex h-8 items-center gap-2 rounded-md bg-accent px-4 text-[12px] font-medium text-white transition-colors hover:bg-accent-hover"
             >
-              Next
+              Execute
             </button>
           )}
-          {isLast && (
+
+          {/* Step 7 executing */}
+          {!showDashboardButton && isLast && executing && (
             <button
-              onClick={onExit}
-              className="flex h-7 items-center rounded-md bg-accent px-3 text-[12px] font-medium text-white transition-colors hover:bg-accent-hover"
+              disabled
+              className="flex h-8 items-center gap-2 rounded-md bg-surface-tertiary px-4 text-[12px] font-medium text-text-tertiary cursor-not-allowed"
             >
-              Finish
+              <svg className="h-3 w-3 animate-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M8 2a6 6 0 0 1 6 6" />
+              </svg>
+              Executing...
             </button>
+          )}
+
+          {/* Normal navigation (not last step, not completed) */}
+          {!showDashboardButton && !isLast && (
+            <>
+              <button
+                onClick={onExit}
+                className="text-[12px] text-text-tertiary transition-colors hover:text-text-secondary mr-2"
+              >
+                Exit
+              </button>
+              {!isFirst && (
+                <button
+                  onClick={onPrev}
+                  className="flex h-7 items-center rounded-md border border-border-default px-2.5 text-[12px] font-medium text-text-secondary transition-colors hover:bg-surface-secondary"
+                >
+                  Back
+                </button>
+              )}
+              <button
+                onClick={onNext}
+                className="flex h-7 items-center rounded-md bg-accent px-3 text-[12px] font-medium text-white transition-colors hover:bg-accent-hover"
+              >
+                Next
+              </button>
+            </>
+          )}
+
+          {/* Last step but no selection yet and not executed */}
+          {!showDashboardButton && isLast && !executeReady && !executing && (
+            <>
+              <button
+                onClick={onExit}
+                className="text-[12px] text-text-tertiary transition-colors hover:text-text-secondary mr-2"
+              >
+                Exit
+              </button>
+              <button
+                onClick={onPrev}
+                className="flex h-7 items-center rounded-md border border-border-default px-2.5 text-[12px] font-medium text-text-secondary transition-colors hover:bg-surface-secondary"
+              >
+                Back
+              </button>
+            </>
           )}
         </div>
       </div>

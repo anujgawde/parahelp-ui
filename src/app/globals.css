@@ -17,10 +17,10 @@
   --color-border-default: rgba(0, 0, 0, 0.08);
   --color-border-strong: rgba(0, 0, 0, 0.14);
 
-  /*  Accent  */
-  --color-accent: #f2692f;
-  --color-accent-hover: #d9571f;
-  --color-accent-soft: #fef1eb;
+  /*  Accent (near-black)  */
+  --color-accent: #1c1b18;
+  --color-accent-hover: #2c2b28;
+  --color-accent-soft: #f0efed;
 
   /*  Integration brand colors  */
   --color-zendesk: #03363d;

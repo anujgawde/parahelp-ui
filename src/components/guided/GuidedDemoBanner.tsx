@@ -14,7 +14,7 @@ export function GuidedDemoBanner() {
   if (dismissed) {
     return (
       <Link
-        href="/chats/TK-4200?guided=true"
+        href="/tickets/TK-4200?guided=true"
         className="group flex items-center gap-3 rounded-xl border border-accent/15 bg-accent-soft/50 px-5 py-3 transition-all hover:border-accent/30 hover:bg-accent-soft"
       >
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
@@ -88,7 +88,7 @@ export function GuidedDemoBanner() {
 
         <div className="flex items-center gap-4">
           <Link
-            href="/chats/TK-4200?guided=true"
+            href="/tickets/TK-4200?guided=true"
             className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-5 text-[14px] font-medium text-white transition-colors hover:bg-accent-hover"
           >
             Start demo

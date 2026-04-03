@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { AppShell } from "@/components/layout";
 import { MemoryFileCard } from "@/components/testing/MemoryFileCard";
 import { TestCaseCard } from "@/components/testing/TestCaseCard";
+import { CheckIcon } from "@/components/icons";
 import { memoryFiles, testCases } from "@/data/agent-testing";
 
 export default function AgentTestingPage() {
+  const [published, setPublished] = useState(false);
+
   return (
     <AppShell>
       <div className="flex flex-1 flex-col overflow-y-auto">
@@ -47,12 +51,24 @@ export default function AgentTestingPage() {
             </div>
           </div>
 
-          {/* Publish button */}
-          <div className="flex justify-end">
-            <button className="h-10 rounded-lg bg-surface-inverse px-6 text-[14px] font-medium text-text-inverse transition-colors hover:bg-surface-inverse/90">
-              Publish
-            </button>
-          </div>
+          {/* Publish button / confirmation */}
+          {published ? (
+            <div className="flex items-center gap-3 rounded-lg border border-badge-green/20 bg-badge-green-soft/30 px-5 py-3 animate-fade-in">
+              <CheckIcon className="h-4 w-4 text-badge-green" />
+              <p className="text-[13px] text-text-secondary">
+                Published to production. All test configurations are now live.
+              </p>
+            </div>
+          ) : (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setPublished(true)}
+                className="h-10 rounded-lg bg-surface-inverse px-6 text-[14px] font-medium text-text-inverse transition-colors hover:bg-surface-inverse/90"
+              >
+                Publish
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </AppShell>

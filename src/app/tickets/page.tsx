@@ -76,9 +76,9 @@ export default function ChatsPage() {
     <AppShell>
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-default px-4 md:px-6">
-          <h1 className="text-sm font-semibold text-text-primary">Chats</h1>
+          <h1 className="text-sm font-semibold text-text-primary">Tickets</h1>
           <span className="text-[12px] text-text-tertiary">
-            {CHATS.length} conversations
+            {CHATS.length} tickets
           </span>
         </header>
 
@@ -89,7 +89,7 @@ export default function ChatsPage() {
             return (
               <Link
                 key={chat.id}
-                href={`/chats/${chat.id}`}
+                href={`/tickets/${chat.id}`}
                 className="flex items-center gap-3 border-b border-border-default px-4 md:px-6 py-4 transition-colors hover:bg-surface-secondary"
               >
                 <div className="flex-1 min-w-0">

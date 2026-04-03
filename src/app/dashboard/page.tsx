@@ -1,93 +1,714 @@
 "use client";
 
-import Link from "next/link";
-import { GuidedDemoBanner } from "@/components/guided/GuidedDemoBanner";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  Legend,
-} from "recharts";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout";
-import { Panel, SectionHeader } from "@/components/ui";
-import {
-  dashboardMetrics,
-  issueCategories,
-  recentActivity,
-  agentPerformance,
-  ticketVolumeTrend,
-  resolutionBreakdown,
-  hourlyDistribution,
-} from "@/data/dashboard";
+import { ChevronDownIcon, CheckIcon } from "@/components/icons";
+import { useTour } from "@/components/guided/TourProvider";
 
-const CHART_COLORS = {
-  green: "#22C55E",
-  greenSoft: "#DCFCE7",
-  blue: "#3B82F6",
-  blueSoft: "#DBEAFE",
-  orange: "#F97316",
-  orangeSoft: "#FED7AA",
-  gray: "#A8A5A1",
-  graySoft: "#F0EFED",
-  accent: "#f2692f",
-  grid: "rgba(0,0,0,0.06)",
-  text: "#6b6862",
-  textLight: "#a8a5a1",
-};
+/* ——— Animated counter ——— */
+function CountUp({
+  target,
+  suffix = "",
+  delay = 0,
+}: {
+  target: number;
+  suffix?: string;
+  delay?: number;
+}) {
+  const [val, setVal] = useState(target);
+  const initialRender = useRef(true);
+  useEffect(() => {
+    // Animate on first render, snap on subsequent updates
+    if (initialRender.current) {
+      initialRender.current = false;
+      setVal(0);
+      const t = setTimeout(() => {
+        const start = performance.now();
+        const step = (now: number) => {
+          const p = Math.min((now - start) / 1000, 1);
+          setVal(Math.round((1 - Math.pow(1 - p, 3)) * target));
+          if (p < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }, delay);
+      return () => clearTimeout(t);
+    } else {
+      setVal(target);
+    }
+  }, [target, delay]);
+  return (
+    <>
+      {val}
+      {suffix}
+    </>
+  );
+}
 
-const CustomTooltipStyle: React.CSSProperties = {
-  backgroundColor: "#1c1b18",
-  border: "none",
-  borderRadius: "8px",
-  padding: "8px 12px",
-  fontSize: "12px",
-  color: "#fdfcfc",
-  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-  zIndex: 100,
-};
+/* ——— Progress Ring ——— */
+function ProgressRing({ pct, delay = 0 }: { pct: number; delay?: number }) {
+  const [offset, setOffset] = useState(76);
+  useEffect(() => {
+    const t = setTimeout(() => setOffset(76 - (76 * pct) / 100), delay + 300);
+    return () => clearTimeout(t);
+  }, [pct, delay]);
+  return (
+    <svg width="22" height="22" viewBox="0 0 28 28" className="shrink-0">
+      <circle
+        cx="14"
+        cy="14"
+        r="12"
+        fill="none"
+        className="stroke-surface-tertiary"
+        strokeWidth="2"
+      />
+      <circle
+        cx="14"
+        cy="14"
+        r="12"
+        fill="none"
+        className="stroke-text-primary"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeDasharray="76"
+        strokeDashoffset={offset}
+        style={{
+          transition: "stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1)",
+          transform: "rotate(-90deg)",
+          transformOrigin: "center",
+        }}
+      />
+    </svg>
+  );
+}
+
+/* ——— Data ——— */
+
+const STATS = [
+  { target: 23, label: "Configs", delay: 300 },
+  { target: 91, suffix: "%", label: "Tests passed", delay: 400 },
+  { target: 18, label: "Published", delay: 500 },
+  { target: 6, label: "Gaps found", delay: 600 },
+];
+
+interface ActionItem {
+  id: string;
+  title: string;
+  detail: string;
+  source: string;
+  type: "publish" | "review" | "alert";
+  primaryAction: { label: string; href?: string };
+  secondaryAction?: { label: string; href?: string };
+}
+
+const ACTIONS: ActionItem[] = [
+  {
+    id: "a-1",
+    type: "publish",
+    title: "Service issues tool config ready",
+    detail:
+      "6/6 tests passed. New check-status-page instruction ready for production.",
+    source: "Gap analysis · 2h ago",
+    primaryAction: { label: "Approve & publish" },
+    secondaryAction: { label: "View tests", href: "/tests" },
+  },
+  {
+    id: "a-2",
+    type: "review",
+    title: "SSO login failure needs operator review",
+    detail:
+      "Agent proposed a resolution plan for TK-4200 (15 users affected). Requires human review before execution.",
+    source: "Ticket escalation · 8 min ago",
+    primaryAction: { label: "Review & refine plan", href: "/tickets/TK-4200" },
+    secondaryAction: { label: "View ticket", href: "/tickets/TK-4200" },
+  },
+  {
+    id: "a-3",
+    type: "review",
+    title: "Refund tool timeout needs review",
+    detail:
+      "Timeout 5s → 12s after 14 transfer failures. Tests pending your trigger.",
+    source: "Manual config · Today",
+    primaryAction: { label: "Run tests" },
+    secondaryAction: { label: "Edit config", href: "/controls" },
+  },
+  {
+    id: "a-4",
+    type: "alert",
+    title: "2 gaps blocked — need new tools",
+    detail:
+      "Subscription tier lookup (31 tickets) + billing API (14 tickets) can't be resolved with knowledge alone.",
+    source: "Gap analysis · Yesterday",
+    primaryAction: { label: "View gaps" },
+    secondaryAction: { label: "Acknowledge" },
+  },
+];
+
+interface TopicItem {
+  id: string;
+  title: string;
+  badge?: string;
+  ring?: number;
+  items: string[];
+}
+
+const TOPICS: TopicItem[] = [
+  {
+    id: "config",
+    title: "3 configs deployed this week",
+    badge: "Deployed",
+    items: [
+      "Service issues check → tech troubleshooting memory",
+      "Newsletter discount codes (WELCOME15, RETURN10)",
+      "Credit grant 3-step approval workflow",
+    ],
+  },
+  {
+    id: "tests",
+    title: "49/54 tests passed",
+    ring: 91,
+    items: [
+      "54 sims — new policy tests + baseline regression",
+      "5 failures: credit grant edge case (no balance confirmation)",
+    ],
+  },
+  {
+    id: "gaps",
+    title: "6 gaps found, 3 auto-fixed",
+    badge: "2 blocked",
+    items: [
+      "3 knowledge gaps fixed & published automatically",
+      "2 blocked — need new tools (CRM lookup, billing API)",
+      "1 needs SSO diagnostic integration",
+    ],
+  },
+  {
+    id: "bugs",
+    title: "4 bug patterns from 101 tickets",
+    badge: "Report",
+    items: [
+      "Safari checkout timeout — 42 tickets (iOS 17+)",
+      "Dashboard stale data — 28 tickets",
+      "Okta SSO loop — 19 tickets",
+      "CSV export missing fields — 12 tickets (since v3.2)",
+    ],
+  },
+];
+
+/* ——— Action Card ——— */
+
+function ActionCard({
+  action,
+  index,
+  onDismiss,
+  skipAnimation,
+  tourTarget,
+  persistedState,
+}: {
+  action: ActionItem;
+  index: number;
+  onDismiss: (
+    id: string,
+    type: "published" | "acknowledged" | "dismissed",
+  ) => void;
+  skipAnimation?: boolean;
+  tourTarget?: string;
+  persistedState?: "published" | "acknowledged" | "dismissed";
+}) {
+  const router = useRouter();
+  const tour = useTour();
+  const [state, setState] = useState<"visible" | "exiting" | "done">(
+    persistedState ? "done" : "visible",
+  );
+  const [doneType, setDoneType] = useState<"published" | "acknowledged" | null>(
+    persistedState === "published"
+      ? "published"
+      : persistedState === "acknowledged"
+        ? "acknowledged"
+        : null,
+  );
+  const [showGaps, setShowGaps] = useState(false);
+  const [testRun, setTestRun] = useState<"idle" | "running" | "done">("idle");
+  const [testsCompleted, setTestsCompleted] = useState(0);
+  const totalTests = 8;
+
+  function handlePrimary() {
+    if (action.primaryAction.href) {
+      const isTouring = tour.active && tour.step?.target === tourTarget;
+      const href = isTouring
+        ? action.primaryAction.href + "?guided=true"
+        : action.primaryAction.href;
+      router.push(href);
+      return;
+    }
+    if (action.primaryAction.label === "Run tests") {
+      setTestRun("running");
+      setTestsCompleted(0);
+      let count = 0;
+      const interval = setInterval(
+        () => {
+          count++;
+          setTestsCompleted(count);
+          if (count >= totalTests) {
+            clearInterval(interval);
+            setTimeout(() => setTestRun("done"), 400);
+          }
+        },
+        600 + Math.random() * 400,
+      );
+      return;
+    }
+    if (action.type === "publish") {
+      setDoneType("published");
+      setState("done");
+      tour.advanceFromClick();
+      return;
+    }
+    if (action.type === "alert") {
+      setShowGaps(!showGaps);
+      return;
+    }
+  }
+
+  const isTourTarget = tour.active && tour.step?.target === tourTarget;
+
+  function handleSecondary() {
+    if (isTourTarget) return;
+    if (action.secondaryAction?.href) {
+      router.push(action.secondaryAction.href);
+      return;
+    }
+    setDoneType("acknowledged");
+    setState("done");
+  }
+
+  const [confirmDismissing, setConfirmDismissing] = useState(false);
+  const [confirmGone, setConfirmGone] = useState(false);
+
+  function dismissConfirmation() {
+    setConfirmDismissing(true);
+    setTimeout(() => {
+      setConfirmGone(true);
+      onDismiss(action.id, doneType ?? "dismissed");
+    }, 300);
+  }
+
+  // Published confirmation
+  if (state === "done" && doneType === "published") {
+    if (confirmGone) return null;
+    return (
+      <div
+        className={`flex items-center gap-3 rounded-lg border border-badge-green/20 bg-badge-green-soft/30 px-5 py-4 animate-fade-in transition-all duration-300 ${
+          confirmDismissing ? "opacity-0 translate-x-6 scale-[0.98]" : ""
+        }`}
+      >
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-badge-green/10">
+          <CheckIcon className="h-3.5 w-3.5 text-badge-green" />
+        </div>
+        <div className="flex-1">
+          <p className="text-[14px] font-medium text-text-primary">
+            Published to production
+          </p>
+          <p className="text-[12px] text-text-secondary">{action.title}</p>
+        </div>
+        <button
+          onClick={dismissConfirmation}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-tertiary transition-all hover:bg-badge-green/10 hover:text-text-primary"
+          title="Dismiss"
+        >
+          <svg
+            className="h-3 w-3"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          >
+            <line x1="4" y1="4" x2="12" y2="12" />
+            <line x1="12" y1="4" x2="4" y2="12" />
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
+  // Acknowledged confirmation
+  if (state === "done" && doneType === "acknowledged") {
+    if (confirmGone) return null;
+    return (
+      <div
+        className={`flex items-center gap-3 rounded-lg border border-border-default bg-surface-secondary px-5 py-4 animate-fade-in transition-all duration-300 ${
+          confirmDismissing ? "opacity-0 translate-x-6 scale-[0.98]" : ""
+        }`}
+      >
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-tertiary">
+          <CheckIcon className="h-3.5 w-3.5 text-text-tertiary" />
+        </div>
+        <div className="flex-1">
+          <p className="text-[14px] font-medium text-text-secondary">
+            Acknowledged
+          </p>
+          <p className="text-[12px] text-text-tertiary">{action.title}</p>
+        </div>
+        <button
+          onClick={dismissConfirmation}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-tertiary transition-all hover:bg-surface-tertiary hover:text-text-primary"
+          title="Dismiss"
+        >
+          <svg
+            className="h-3 w-3"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          >
+            <line x1="4" y1="4" x2="12" y2="12" />
+            <line x1="12" y1="4" x2="4" y2="12" />
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
+  if (state === "done") return null;
+
+  const typeIndicator = {
+    publish: "bg-badge-green",
+    review: "bg-badge-orange",
+    alert: "bg-risk-high",
+  }[action.type];
+
+  return (
+    <div
+      data-tour={tourTarget}
+      className={`group rounded-lg border border-border-default bg-surface-primary transition-all hover:border-border-strong hover:shadow-sm ${
+        state === "exiting"
+          ? "opacity-0 translate-x-6 scale-[0.98]"
+          : skipAnimation
+            ? ""
+            : "animate-fade-in"
+      }`}
+      style={{
+        animationDelay: skipAnimation ? undefined : `${index * 60 + 200}ms`,
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      }}
+    >
+      <div className="flex items-start gap-3.5 px-5 py-4">
+        {/* Type indicator */}
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-tertiary mt-0.5">
+          <div className={`h-2.5 w-2.5 rounded-full ${typeIndicator}`} />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <p className="text-[14px] font-semibold text-text-primary leading-snug">
+            {action.title}
+          </p>
+          <p className="mt-1.5 text-[13px] text-text-secondary leading-relaxed">
+            {action.detail}
+          </p>
+          <p className="mt-1.5 text-[12px] text-text-tertiary">
+            {action.source}
+          </p>
+
+          {/* Action buttons */}
+          <div className="mt-3 flex gap-2 opacity-0 translate-y-0.5 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0">
+            <button
+              onClick={handlePrimary}
+              className="rounded-md bg-surface-inverse px-3.5 py-1.5 text-[12px] font-medium text-text-inverse transition-colors hover:bg-surface-inverse/90"
+            >
+              {action.primaryAction.label}
+            </button>
+            {action.secondaryAction && !isTourTarget && (
+              <button
+                onClick={handleSecondary}
+                className="rounded-md border border-border-default bg-surface-primary px-3.5 py-1.5 text-[12px] font-medium text-text-secondary transition-colors hover:bg-surface-secondary"
+              >
+                {action.secondaryAction.label}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Dismiss */}
+        <button
+          onClick={() => {
+            if (isTourTarget) return;
+            setState("exiting");
+            setTimeout(() => {
+              setState("done");
+              onDismiss(action.id, "dismissed");
+            }, 300);
+          }}
+          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-tertiary transition-all hover:bg-surface-tertiary hover:text-text-primary opacity-0 group-hover:opacity-100 ${isTourTarget ? "hidden!" : ""}`}
+          title="Dismiss"
+        >
+          <svg
+            className="h-3 w-3"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          >
+            <line x1="4" y1="4" x2="12" y2="12" />
+            <line x1="12" y1="4" x2="4" y2="12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Inline test runner */}
+      {testRun !== "idle" && (
+        <div className="border-t border-border-default px-4 py-3 animate-fade-in">
+          <div className="pl-11">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12px] font-medium text-text-primary">
+                {testRun === "running"
+                  ? `Running simulations... ${testsCompleted}/${totalTests}`
+                  : `All ${totalTests} tests passed`}
+              </span>
+              {testRun === "running" && (
+                <svg
+                  className="h-3.5 w-3.5 animate-spin text-text-tertiary"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
+                  <path d="M8 2a6 6 0 0 1 6 6" />
+                </svg>
+              )}
+              {testRun === "done" && (
+                <CheckIcon className="h-3.5 w-3.5 text-badge-green" />
+              )}
+            </div>
+            {/* Progress bar */}
+            <div className="h-1.5 w-full rounded-full bg-surface-tertiary overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ease-out ${
+                  testRun === "done" ? "bg-badge-green" : "bg-text-primary"
+                }`}
+                style={{ width: `${(testsCompleted / totalTests) * 100}%` }}
+              />
+            </div>
+            {/* Individual test results */}
+            {testsCompleted > 0 && (
+              <div className="mt-2 flex flex-col gap-1">
+                {Array.from({ length: testsCompleted }, (_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 animate-fade-in"
+                    style={{ animationDuration: "0.15s" }}
+                  >
+                    <CheckIcon className="h-2.5 w-2.5 text-badge-green" />
+                    <span className="text-[11px] font-mono text-text-tertiary">
+                      {
+                        [
+                          "refund_timeout_standard",
+                          "refund_timeout_edge",
+                          "refund_high_value",
+                          "refund_cancelled_sub",
+                          "baseline_refund_5s",
+                          "baseline_billing",
+                          "regression_transfer",
+                          "regression_escalation",
+                        ][i]
+                      }
+                    </span>
+                    <span className="text-[10px] font-mono text-text-tertiary ml-auto">
+                      {(0.6 + Math.random() * 1.2).toFixed(1)}s
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Action after tests pass */}
+            {testRun === "done" && (
+              <div className="mt-3 flex gap-2 animate-fade-in">
+                <button
+                  onClick={() => {
+                    setState("exiting");
+                    setDoneType("published");
+                    setTimeout(() => {
+                      setState("done");
+                      onDismiss(action.id, "published");
+                    }, 300);
+                  }}
+                  className="rounded-md bg-surface-inverse px-3.5 py-1.5 text-[12px] font-medium text-text-inverse transition-colors hover:bg-surface-inverse/90"
+                >
+                  Approve & publish
+                </button>
+                <button
+                  onClick={() => {
+                    setState("exiting");
+                    setTimeout(() => {
+                      setState("done");
+                      onDismiss(action.id, "dismissed");
+                    }, 300);
+                  }}
+                  className="rounded-md border border-border-default bg-surface-primary px-3.5 py-1.5 text-[12px] font-medium text-text-secondary transition-colors hover:bg-surface-secondary"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Expanded gaps detail */}
+      {showGaps && action.type === "alert" && (
+        <div className="border-t border-border-default px-4 py-3 animate-fade-in">
+          <div className="flex flex-col gap-2 pl-11">
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-medium text-text-primary">
+                Subscription tier lookup
+              </span>
+              <span className="rounded bg-badge-purple-soft px-1.5 py-0.5 text-[10px] font-semibold text-badge-purple">
+                Needs tool
+              </span>
+            </div>
+            <p className="text-[11px] text-text-tertiary">
+              31 tickets — agent cannot check Free/Pro/Enterprise status without
+              CRM lookup
+            </p>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-[12px] font-medium text-text-primary">
+                Billing adjustment access
+              </span>
+              <span className="rounded bg-badge-purple-soft px-1.5 py-0.5 text-[10px] font-semibold text-badge-purple">
+                Needs tool
+              </span>
+            </div>
+            <p className="text-[11px] text-text-tertiary">
+              14 tickets — requires billing API integration for
+              credit/adjustment actions
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ——— Topic Row ——— */
+
+function TopicRow({ topic, index }: { topic: TopicItem; index: number }) {
+  const [open, setOpen] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    if (contentRef.current) setHeight(contentRef.current.scrollHeight);
+  }, [open]);
+
+  return (
+    <div
+      className="animate-fade-in"
+      style={{ animationDelay: `${index * 50 + 500}ms` }}
+    >
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition-all hover:bg-surface-tertiary/60 ${
+          open ? "rounded-t-lg bg-surface-secondary" : "rounded-lg"
+        }`}
+      >
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-surface-tertiary">
+          <div className="h-1.5 w-1.5 rounded-full bg-text-tertiary" />
+        </div>
+        <span className="flex-1 text-[13px] font-semibold text-text-primary">
+          {topic.title}
+        </span>
+        {topic.badge && (
+          <span className="rounded-md bg-surface-tertiary px-2 py-0.5 text-[10px] font-semibold text-text-secondary">
+            {topic.badge}
+          </span>
+        )}
+        {topic.ring != null && (
+          <ProgressRing pct={topic.ring} delay={index * 50 + 600} />
+        )}
+        <ChevronDownIcon
+          className={`h-3.5 w-3.5 text-text-tertiary transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <div
+        className="overflow-hidden transition-all duration-300"
+        style={{ maxHeight: open ? height + 16 : 0 }}
+      >
+        <div
+          ref={contentRef}
+          className="rounded-b-lg bg-surface-secondary px-3.5 pb-3 pt-0.5"
+        >
+          {topic.items.map((item, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-2.5 py-1.5 transition-all duration-200"
+              style={{
+                opacity: open ? 1 : 0,
+                transform: open ? "translateY(0)" : "translateY(-4px)",
+                transitionDelay: `${i * 40 + 60}ms`,
+              }}
+            >
+              <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-text-tertiary" />
+              <span className="text-[12px] leading-relaxed text-text-secondary">
+                {item}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ——— Page ——— */
+
+// Persist which action cards have been acted on
+function saveDismissed(d: Record<string, string>) {
+  localStorage.setItem("parahelp-dashboard-actions", JSON.stringify(d));
+}
 
 export default function DashboardPage() {
-  const { autoResolved, avgResolutionTime, escalationRate, csat } =
-    dashboardMetrics;
+  const [showAll, setShowAll] = useState(false);
+  const [dismissed, setDismissed] = useState<
+    Record<string, "published" | "acknowledged" | "dismissed">
+  >({});
+  const [tourCompleteMsg, setTourCompleteMsg] = useState(false);
 
-  const pieData = [
-    {
-      name: "AI Resolved",
-      value: resolutionBreakdown.aiResolved,
-      color: CHART_COLORS.green,
-    },
-    {
-      name: "Human Resolved",
-      value: resolutionBreakdown.humanResolved,
-      color: CHART_COLORS.blue,
-    },
-    {
-      name: "Escalated",
-      value: resolutionBreakdown.escalated,
-      color: CHART_COLORS.orange,
-    },
-  ];
+  // Check for tour completion message
+  useEffect(() => {
+    if (localStorage.getItem("parahelp-tour-show-complete") === "true") {
+      localStorage.removeItem("parahelp-tour-show-complete");
+      setTourCompleteMsg(true);
+      const t = setTimeout(() => setTourCompleteMsg(false), 8000);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
-  const hourlyData = hourlyDistribution.map((val, i) => ({
-    hour: `${i.toString().padStart(2, "0")}:00`,
-    tickets: val,
-  }));
+  // Reset action card states on mount (fresh start every page load)
+  useEffect(() => {
+    localStorage.removeItem("parahelp-dashboard-actions");
+  }, []);
 
-  const totalTickets =
-    resolutionBreakdown.aiResolved +
-    resolutionBreakdown.humanResolved +
-    resolutionBreakdown.escalated;
-  const aiPercent = Math.round(
-    (resolutionBreakdown.aiResolved / totalTickets) * 100,
+  const publishCount = Object.values(dismissed).filter(
+    (v) => v === "published",
+  ).length;
+  const activeActions = ACTIONS.filter((a) => !dismissed[a.id]);
+  const visible = showAll ? activeActions : activeActions.slice(0, 3);
+  const activeCount = activeActions.length;
+  const hasMore = !showAll && activeActions.length > 3;
+
+  const handleDismiss = useCallback(
+    (id: string, type: "published" | "acknowledged" | "dismissed") => {
+      setDismissed((prev) => {
+        const next = { ...prev, [id]: type };
+        saveDismissed(next);
+        return next;
+      });
+    },
+    [],
   );
 
   return (
@@ -97,506 +718,173 @@ export default function DashboardPage() {
           <h1 className="text-sm font-semibold text-text-primary">Dashboard</h1>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="space-y-6">
-            {/* Guided demo banner */}
-            <GuidedDemoBanner />
+        <div className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-3xl px-4 py-6 md:px-6 md:py-10">
+            {/* Tour complete banner */}
+            {tourCompleteMsg && (
+              <div className="mb-6 flex items-center gap-3 rounded-xl border border-badge-green/20 bg-badge-green-soft/20 px-5 py-4 animate-fade-in">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-badge-green/10">
+                  <CheckIcon className="h-4 w-4 text-badge-green" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[14px] font-semibold text-text-primary">
+                    Guided tour complete
+                  </p>
+                  <p className="text-[12px] text-text-secondary mt-0.5">
+                    You experienced how an operator can steer an agent&apos;s
+                    plan — editing steps, simulating outcomes, and choosing what
+                    gets executed.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setTourCompleteMsg(false)}
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-tertiary hover:bg-surface-tertiary hover:text-text-primary transition-colors"
+                >
+                  <svg
+                    className="h-3 w-3"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  >
+                    <line x1="4" y1="4" x2="12" y2="12" />
+                    <line x1="12" y1="4" x2="4" y2="12" />
+                  </svg>
+                </button>
+              </div>
+            )}
 
-            {/* Metric cards */}
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-              <MetricCard
-                label="Auto-Resolved"
-                value={`${autoResolved.value} / ${autoResolved.total}`}
-                change={autoResolved.changePercent}
-              />
-              <MetricCard
-                label="Avg Resolution Time"
-                value={`${avgResolutionTime.minutes}m`}
-                change={avgResolutionTime.changePercent}
-                invertGood
-              />
-              <MetricCard
-                label="Escalation Rate"
-                value={`${escalationRate.percent}%`}
-                change={escalationRate.changePercent}
-                invertGood
-              />
-              <MetricCard
-                label="CSAT"
-                value={`${csat.score} / 5`}
-                change={csat.changePercent}
-              />
+            {/* Greeting */}
+            <div className="mb-7 animate-fade-in" data-tour="tour-greeting">
+              <span className="mb-3 inline-block rounded border border-border-default px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">
+                Agent Summary
+              </span>
+              <h2 className="text-[26px] font-bold leading-snug tracking-tight text-text-primary">
+                Your agent ran{" "}
+                <span className="border-b-2 border-text-primary">3 tasks</span>{" "}
+                and found{" "}
+                <span className="border-b-2 border-text-primary">
+                  4 updates
+                </span>
+                .
+              </h2>
+              <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-text-tertiary">
+                <svg
+                  className="h-3 w-3"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M5.46 4.73A9.96 9.96 0 0 1 12 2c5.52 0 10 4.48 10 10h-2a8 8 0 0 0-13.07-6.19l2.07 2.07H4V2.81l1.46 1.92zM18.54 19.27A9.96 9.96 0 0 1 12 22C6.48 22 2 17.52 2 12h2a8 8 0 0 0 13.07 6.19l-2.07-2.07H20v5.07l-1.46-1.92z" />
+                </svg>
+                8 min ago
+              </div>
             </div>
 
-            {/* Charts row */}
-            <div className="grid grid-cols-1 gap-4 items-stretch lg:grid-cols-3">
-              {/* Ticket volume trend */}
-              <div className="lg:col-span-2 flex flex-col">
-                <SectionHeader
-                  title="Ticket Volume"
-                  action={
-                    <span className="text-[11px] text-text-tertiary">
-                      Last 7 days
-                    </span>
-                  }
-                />
-                <Panel className="mt-3 flex-1">
-                  <ResponsiveContainer width="100%" height={220}>
-                    <AreaChart data={ticketVolumeTrend}>
-                      <defs>
-                        <linearGradient
-                          id="totalGrad"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor={CHART_COLORS.gray}
-                            stopOpacity={0.15}
-                          />
-                          <stop
-                            offset="95%"
-                            stopColor={CHART_COLORS.gray}
-                            stopOpacity={0}
-                          />
-                        </linearGradient>
-                        <linearGradient
-                          id="resolvedGrad"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor={CHART_COLORS.green}
-                            stopOpacity={0.2}
-                          />
-                          <stop
-                            offset="95%"
-                            stopColor={CHART_COLORS.green}
-                            stopOpacity={0}
-                          />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke={CHART_COLORS.grid}
-                        vertical={false}
-                      />
-                      <XAxis
-                        dataKey="day"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 11, fill: CHART_COLORS.textLight }}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 11, fill: CHART_COLORS.textLight }}
-                        width={36}
-                      />
-                      <Tooltip
-                        contentStyle={CustomTooltipStyle}
-                        cursor={{ stroke: CHART_COLORS.grid }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="total"
-                        stroke={CHART_COLORS.gray}
-                        strokeWidth={2}
-                        fill="url(#totalGrad)"
-                        name="Total"
-                        dot={{ r: 3, fill: CHART_COLORS.gray, strokeWidth: 0 }}
-                        activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="resolved"
-                        stroke={CHART_COLORS.green}
-                        strokeWidth={2}
-                        fill="url(#resolvedGrad)"
-                        name="Resolved"
-                        dot={{ r: 3, fill: CHART_COLORS.green, strokeWidth: 0 }}
-                        activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
-                      />
-                      <Legend
-                        verticalAlign="top"
-                        align="right"
-                        iconType="circle"
-                        iconSize={8}
-                        wrapperStyle={{
-                          fontSize: 11,
-                          color: CHART_COLORS.text,
-                        }}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </Panel>
-              </div>
-
-              {/* Resolution breakdown donut */}
-              <div className="relative z-10 flex flex-col">
-                <SectionHeader title="Resolution Breakdown" />
-                <Panel className="mt-3 flex-1 flex flex-col justify-center">
-                  <div className="flex flex-col items-center">
-                    <div className="relative overflow-visible">
-                      <ResponsiveContainer width={180} height={180} style={{ overflow: "visible" }}>
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={55}
-                            outerRadius={80}
-                            paddingAngle={3}
-                            dataKey="value"
-                            strokeWidth={0}
-                          >
-                            {pieData.map((entry, i) => (
-                              <Cell key={i} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            contentStyle={CustomTooltipStyle}
-                            wrapperStyle={{ zIndex: 100 }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      {/* Center label */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-[22px] font-semibold text-text-primary leading-none">
-                          {aiPercent}%
-                        </span>
-                        <span className="text-[11px] text-text-tertiary mt-0.5">
-                          AI resolved
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-4 mt-2">
-                      {pieData.map((seg) => (
-                        <div
-                          key={seg.name}
-                          className="flex items-center gap-1.5"
-                        >
-                          <span
-                            className="h-2 w-2 rounded-full shrink-0"
-                            style={{ backgroundColor: seg.color }}
-                          />
-                          <span className="text-[11px] text-text-tertiary">
-                            {seg.name}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+            {/* Stats strip */}
+            <div
+              className="mb-8 grid grid-cols-4 gap-2 animate-fade-in"
+              data-tour="tour-stats"
+              style={{ animationDelay: "80ms" }}
+            >
+              {STATS.map((s, i) => (
+                <div
+                  key={i}
+                  className="rounded-lg bg-surface-secondary py-3 text-center"
+                >
+                  <div className="text-[20px] font-extrabold tracking-tight text-text-primary tabular-nums">
+                    <CountUp
+                      target={s.target + (i === 2 ? publishCount : 0)}
+                      suffix={s.suffix ?? ""}
+                      delay={s.delay}
+                    />
                   </div>
-                </Panel>
-              </div>
-            </div>
-
-            {/* Hourly distribution + categories */}
-            <div className="grid grid-cols-1 gap-4 items-stretch lg:grid-cols-5">
-              {/* Hourly distribution */}
-              <div className="lg:col-span-2 flex flex-col">
-                <SectionHeader
-                  title="Hourly Distribution"
-                  action={
-                    <span className="text-[11px] text-text-tertiary">
-                      Today
-                    </span>
-                  }
-                />
-                <Panel className="mt-3 flex-1">
-                  <ResponsiveContainer width="100%" height="100%" minHeight={250}>
-                    <BarChart data={hourlyData}>
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke={CHART_COLORS.grid}
-                        vertical={false}
-                      />
-                      <XAxis
-                        dataKey="hour"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 10, fill: CHART_COLORS.textLight }}
-                        interval={3}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 11, fill: CHART_COLORS.textLight }}
-                        width={28}
-                      />
-                      <Tooltip
-                        contentStyle={CustomTooltipStyle}
-                        cursor={{ fill: "rgba(0,0,0,0.03)" }}
-                      />
-                      <Bar
-                        dataKey="tickets"
-                        name="Tickets"
-                        radius={[3, 3, 0, 0]}
-                        fill={CHART_COLORS.accent}
-                        fillOpacity={0.8}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Panel>
-              </div>
-
-              {/* Top issue categories */}
-              <div className="lg:col-span-3 flex flex-col">
-                <SectionHeader
-                  title="Top Issue Categories"
-                  action={
-                    <span className="text-[11px] text-text-tertiary">
-                      Last 7 days
-                    </span>
-                  }
-                />
-                <Panel flush className="mt-3 flex-1">
-                  <div className="flex items-center gap-3 border-b border-border-default px-5 py-2.5">
-                    <span className="flex-1 text-[11px] font-medium uppercase tracking-wide text-text-tertiary">
-                      Category
-                    </span>
-                    <span className="w-12 text-right text-[11px] font-medium uppercase tracking-wide text-text-tertiary">
-                      Count
-                    </span>
-                    <span className="w-20 text-right text-[11px] font-medium uppercase tracking-wide text-text-tertiary">
-                      Share
-                    </span>
-                    <span className="w-20 text-right text-[11px] font-medium uppercase tracking-wide text-text-tertiary">
-                      Top Risk
-                    </span>
+                  <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
+                    {s.label}
                   </div>
-                  {issueCategories.map((cat) => (
-                    <div
-                      key={cat.name}
-                      className="flex items-center gap-3 border-b border-border-default px-5 py-2.5 last:border-b-0"
-                    >
-                      <span className="flex-1 text-[13px] text-text-primary">
-                        {cat.name}
-                      </span>
-                      <span className="w-12 text-right font-mono text-[12px] text-text-secondary">
-                        {cat.count}
-                      </span>
-                      <div className="flex w-20 items-center justify-end gap-2">
-                        <div className="h-1 w-10 overflow-hidden rounded-full bg-surface-tertiary">
-                          <div
-                            className="h-full rounded-full bg-text-tertiary"
-                            style={{ width: `${cat.percentOfTotal}%` }}
-                          />
-                        </div>
-                        <span className="font-mono text-[11px] text-text-tertiary">
-                          {cat.percentOfTotal}%
-                        </span>
-                      </div>
-                      <div className="flex w-20 justify-end">
-                        <RiskPill level={cat.topRisk} />
-                      </div>
-                    </div>
-                  ))}
-                </Panel>
-              </div>
+                </div>
+              ))}
             </div>
 
-            {/* Agent performance */}
-            <div>
-              <SectionHeader title="Agent Performance" />
-              <Panel className="mt-3 space-y-0 p-0">
-                {agentPerformance.map((agent) => {
-                  const total = agent.resolved + agent.escalated;
-                  const resolveRate = Math.round(
-                    (agent.resolved / total) * 100,
-                  );
+            {/* Needs attention */}
+            <div className="mb-6">
+              <div
+                className="mb-3 flex items-center gap-3 animate-fade-in"
+                style={{ animationDelay: "150ms" }}
+              >
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
+                  Needs attention
+                </span>
+                <span className="flex-1 h-px bg-border-default" />
+                <span className="rounded bg-surface-tertiary px-1.5 py-0.5 text-[10px] font-semibold text-text-tertiary">
+                  {activeCount}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {visible.map((a, i) => {
+                  const target =
+                    a.id === "a-1"
+                      ? "tour-action-publish"
+                      : a.id === "a-2"
+                        ? "tour-action-hitl"
+                        : undefined;
                   return (
-                    <div
-                      key={agent.name}
-                      className="flex items-center gap-6 border-b border-border-default px-5 py-3 last:border-b-0"
-                    >
-                      <span className="w-36 text-[13px] font-medium text-text-primary">
-                        {agent.name}
-                      </span>
-                      <div className="flex flex-1 items-center gap-3">
-                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-tertiary">
-                          <div
-                            className="h-full rounded-full bg-badge-green transition-all"
-                            style={{ width: `${resolveRate}%` }}
-                          />
-                        </div>
-                        <span className="w-10 text-right font-mono text-[12px] text-text-secondary">
-                          {resolveRate}%
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-text-tertiary">
-                        {agent.resolved} resolved
-                      </span>
-                      <span className="text-[11px] text-text-tertiary">
-                        {agent.escalated} esc.
-                      </span>
-                      <span className="rounded-full bg-badge-green-soft px-2 py-0.5 text-[11px] font-medium text-badge-green">
-                        {agent.avgConfidence}%
-                      </span>
-                    </div>
+                    <ActionCard
+                      key={a.id}
+                      action={a}
+                      index={i}
+                      onDismiss={handleDismiss}
+                      skipAnimation={showAll && i >= 3}
+                      tourTarget={target}
+                      persistedState={dismissed[a.id]}
+                    />
                   );
                 })}
-              </Panel>
+              </div>
+
+              {activeCount === 0 && (
+                <div className="rounded-lg border border-border-default bg-surface-secondary py-8 text-center">
+                  <p className="text-[13px] text-text-tertiary">
+                    All caught up. No actions need your attention.
+                  </p>
+                </div>
+              )}
+
+              {hasMore && (
+                <button
+                  onClick={() => setShowAll(true)}
+                  className="mt-2 flex items-center gap-1.5 px-1 py-1.5 text-[12px] font-medium text-text-secondary transition-colors hover:text-text-primary"
+                >
+                  <ChevronDownIcon className="h-3.5 w-3.5" />
+                  Show {activeActions.length - 3} more
+                </button>
+              )}
             </div>
 
-            {/* Recent activity */}
+            {/* Divider */}
+            {/* <div className="mb-6 h-px bg-border-default" /> */}
+
+            {/* This week */}
             <div>
-              <SectionHeader title="Recent Chats" />
-              <Panel flush className="mt-3">
-                {recentActivity.map((evt) => (
-                  <Link
-                    key={evt.id}
-                    href={`/chats/${evt.ticketId}`}
-                    className="flex items-center gap-3 border-b border-border-default px-5 py-3 last:border-b-0 transition-colors hover:bg-surface-tertiary/40"
-                  >
-                    <span className="w-20 shrink-0 font-mono text-[12px] text-text-secondary">
-                      {evt.ticketId}
-                    </span>
-                    <span className="flex-1 text-[13px] text-text-primary">
-                      {evt.description}
-                    </span>
-                    <StatusDot status={evt.status} />
-                    <span className="shrink-0 text-[11px] text-text-tertiary">
-                      {evt.timestamp}
-                    </span>
-                  </Link>
+              <div
+                className="mb-3 flex items-center gap-3 animate-fade-in"
+                style={{ animationDelay: "400ms" }}
+              >
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
+                  This week
+                </span>
+                <span className="flex-1 h-px bg-border-default" />
+              </div>
+              <div className="flex flex-col gap-1">
+                {TOPICS.map((t, i) => (
+                  <TopicRow key={t.id} topic={t} index={i} />
                 ))}
-              </Panel>
-            </div>
-
-            {/* Performance summary */}
-            <div>
-              <SectionHeader title="Performance Summary" />
-              <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Panel>
-                  <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-text-tertiary">
-                    Volume
-                  </p>
-                  <LabelValue label="Tickets today" value="142" />
-                  <LabelValue label="AI-handled" value="118 (83%)" />
-                  <LabelValue label="Human-handled" value="24 (17%)" />
-                </Panel>
-                <Panel>
-                  <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-text-tertiary">
-                    Speed
-                  </p>
-                  <LabelValue label="Median first reply" value="12s" />
-                  <LabelValue label="Median resolution" value="3.2m" />
-                  <LabelValue label="P95 resolution" value="14.8m" />
-                </Panel>
-                <Panel>
-                  <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-text-tertiary">
-                    Quality
-                  </p>
-                  <LabelValue label="Confidence > 90%" value="68%" />
-                  <LabelValue label="Escalation trigger" value="< 40%" />
-                  <LabelValue
-                    label="Active agents"
-                    value={
-                      <span className="flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-badge-green" />
-                        4 online
-                      </span>
-                    }
-                  />
-                </Panel>
               </div>
             </div>
           </div>
         </div>
       </div>
     </AppShell>
-  );
-}
-
-/* ——— Helper components ——— */
-
-function MetricCard({
-  label,
-  value,
-  change,
-  invertGood = false,
-}: {
-  label: string;
-  value: string;
-  change: number;
-  invertGood?: boolean;
-}) {
-  const isGood = invertGood ? change < 0 : change > 0;
-  const arrow = change > 0 ? "\u2191" : "\u2193";
-  const changeText =
-    Math.abs(change) < 0.1
-      ? "No change"
-      : `${arrow} ${Math.abs(change)}% vs last 7d`;
-  const changeColor = isGood ? "text-badge-green" : "text-risk-high";
-
-  return (
-    <Panel>
-      <p className="text-[12px] text-text-tertiary">{label}</p>
-      <p className="mt-1 text-[22px] font-semibold text-text-primary leading-tight">
-        {value}
-      </p>
-      <p className={`mt-1 text-[11px] ${changeColor}`}>{changeText}</p>
-    </Panel>
-  );
-}
-
-function RiskPill({ level }: { level: string }) {
-  const styles: Record<string, string> = {
-    low: "bg-badge-green-soft text-badge-green",
-    medium: "bg-badge-orange-soft text-badge-orange",
-    high: "bg-risk-high-soft text-risk-high",
-    critical: "bg-risk-critical-soft text-risk-critical",
-  };
-  const labels: Record<string, string> = {
-    low: "Low",
-    medium: "Medium",
-    high: "High",
-    critical: "Critical",
-  };
-  return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-        styles[level] ?? styles.low
-      }`}
-    >
-      {labels[level] ?? level}
-    </span>
-  );
-}
-
-function StatusDot({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    resolved: "bg-badge-green",
-    escalated: "bg-risk-high",
-    open: "bg-badge-blue",
-    active: "bg-badge-orange",
-  };
-  return (
-    <span
-      className={`h-2 w-2 shrink-0 rounded-full ${
-        colors[status] ?? colors.resolved
-      }`}
-    />
-  );
-}
-
-function LabelValue({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between py-1">
-      <span className="text-[13px] text-text-secondary">{label}</span>
-      <span className="text-[13px] font-medium text-text-primary">{value}</span>
-    </div>
   );
 }

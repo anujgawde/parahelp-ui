@@ -8,7 +8,6 @@ import {
   PlusIcon,
   ScheduleIcon,
   MessageIcon,
-  ActivityIcon,
   AgentIcon,
   ChevronDownIcon,
 } from "../icons";
@@ -34,19 +33,14 @@ function DashboardIcon({ className }: { className?: string }) {
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: DashboardIcon },
+  { label: "Tickets", href: "/tickets", icon: MessageIcon },
   { label: "Scheduled chats", href: "/scheduled", icon: ScheduleIcon },
-  { label: "Chats", href: "/chats", icon: MessageIcon },
-  { label: "Activity", href: "/activity", icon: ActivityIcon },
   { label: "Customer agent", href: "/controls", icon: AgentIcon },
 ] as const;
 
 const RECENT_CHATS = [
-  { id: "1", title: "Analyze bug patterns", timeAgo: "30 min. ago" },
-  { id: "2", title: "Check service status", timeAgo: "16 hours ago" },
-  { id: "3", title: "Update refund policy", timeAgo: "16 hours ago" },
-  { id: "4", title: "Configure Stripe tools", timeAgo: "2 days ago" },
-  { id: "5", title: "Optimize troubleshooting", timeAgo: "3 days ago" },
-  { id: "6", title: "Weekly performance report", timeAgo: "5 days ago" },
+  { id: "chat-2", title: "Analyze bug patterns", timeAgo: "30 min. ago", href: "/?chat=chat-2" },
+  { id: "chat-1", title: "Check service status", timeAgo: "16 hours ago", href: "/?chat=chat-1" },
 ];
 
 interface SidebarProps {
@@ -58,7 +52,7 @@ export function Sidebar({ onClose }: SidebarProps) {
   const [recentExpanded, setRecentExpanded] = useState(true);
 
   return (
-    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border-default bg-surface-primary">
+    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border-default" style={{ backgroundColor: "rgb(248, 247, 246)" }}>
       {/* Brand */}
       <div className="flex h-14 items-center px-5">
         <Image
@@ -71,23 +65,19 @@ export function Sidebar({ onClose }: SidebarProps) {
         />
       </div>
 
-      {/* New chat button */}
-      <div className="px-3 pb-2">
+      {/* Navigation (New chat + nav items, no gap) */}
+      <nav className="flex flex-col gap-0.5 px-3">
         <Link
           href="/"
-          className="flex h-9 w-full items-center gap-2 rounded-lg border border-border-default px-3 text-[13px] font-medium text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
+          className="group flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium text-text-secondary transition-colors hover:bg-surface-tertiary/60 hover:text-text-primary"
         >
-          <PlusIcon className="h-3.5 w-3.5" />
+          <PlusIcon className="h-3.5 w-3.5 text-text-tertiary group-hover:text-text-secondary" />
           New chat
         </Link>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex flex-col gap-0.5 px-3 pt-1">
         {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
           const isActive =
             pathname === href ||
-            (href === "/chats" && pathname.startsWith("/chats"));
+            (href === "/tickets" && pathname.startsWith("/tickets"));
           return (
             <Link
               key={href}
@@ -97,7 +87,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                 ${
                   isActive
                     ? "bg-surface-tertiary text-text-primary"
-                    : "text-text-secondary hover:bg-surface-secondary hover:text-text-primary"
+                    : "text-text-secondary hover:bg-surface-tertiary/60 hover:text-text-primary"
                 }
               `}
             >
@@ -133,8 +123,8 @@ export function Sidebar({ onClose }: SidebarProps) {
             {RECENT_CHATS.map((chat) => (
               <Link
                 key={chat.id}
-                href="/"
-                className="flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-[13px] text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
+                href={chat.href}
+                className="flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-[13px] text-text-secondary transition-colors hover:bg-surface-tertiary/60 hover:text-text-primary"
               >
                 <span className="truncate">{chat.title}</span>
                 <span className="shrink-0 text-[11px] text-text-tertiary">
@@ -142,15 +132,12 @@ export function Sidebar({ onClose }: SidebarProps) {
                 </span>
               </Link>
             ))}
-            <button className="px-3 py-1.5 text-left text-[13px] text-text-tertiary hover:text-text-secondary transition-colors">
-              ... All chats
-            </button>
           </div>
         )}
       </div>
 
       {/* User footer */}
-      <div className="border-t border-border-default px-5 py-3">
+      <div className="px-5 py-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-tertiary shrink-0">
             <span className="text-[11px] font-semibold text-text-secondary">
