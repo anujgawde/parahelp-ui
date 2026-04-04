@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { TourProvider } from "@/components/guided/TourProvider";
 import "./globals.css";
 
@@ -32,6 +33,7 @@ export default function RootLayout({
     >
       <body className="h-full font-sans antialiased">
         <TourProvider>{children}</TourProvider>
+        <Analytics />
       </body>
     </html>
   );
